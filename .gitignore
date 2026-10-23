@@ -7,3 +7,5 @@ next-env.d.ts
 
 .vercel
 .data
+src/local/sql.generated.ts
+public/demo-db.tar.gz

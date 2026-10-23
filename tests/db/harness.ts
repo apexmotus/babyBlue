@@ -7,7 +7,7 @@ import path from "node:path";
 /** Minimal stand-in for the Supabase pieces the schema depends on (auth schema, roles, auth.uid()). */
 const SUPABASE_STUBS = `
   create schema auth;
-  create table auth.users (id uuid primary key default gen_random_uuid(), email text);
+  create table auth.users (id uuid primary key default gen_random_uuid(), email text, raw_user_meta_data jsonb not null default '{}');
   create function auth.uid() returns uuid language sql stable as $$
     select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
   $$;
@@ -71,7 +71,8 @@ export async function seed(db: Db) {
       ('${I.consumer1}', 'c1@example.test'), ('${I.consumer2}', 'c2@example.test'),
       ('${I.platformAdmin}', 'admin@example.test'), ('${I.operator}', 'ops@example.test');
     insert into public.profiles (id, display_name, phone) values
-      ('${I.consumer1}', 'Consumer One', '0820000001'), ('${I.consumer2}', 'Consumer Two', '0820000002');
+      ('${I.consumer1}', 'Consumer One', '0820000001'), ('${I.consumer2}', 'Consumer Two', '0820000002')
+      on conflict (id) do update set display_name = excluded.display_name, phone = excluded.phone;
     insert into public.platform_roles values ('${I.platformAdmin}', 'platform_admin'), ('${I.operator}', 'marketing_operator');
 
     insert into public.practices (id, name, slug, status) values

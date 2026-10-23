@@ -69,7 +69,7 @@ create table public.practitioners (
   -- A verified badge is only ever shown when verification_status = 'verified'. Set by platform admins only (see 0003).
   verification_status text not null default 'unverified' check (verification_status in ('unverified', 'pending', 'verified', 'rejected')),
   verified_at         timestamptz,
-  verified_by         uuid references auth.users (id),
+  verified_by         uuid references auth.users (id) on delete set null,
   listing_status      text not null default 'draft' check (listing_status in ('draft', 'listed', 'hidden')),
   created_at          timestamptz not null default now(),
   unique (id, practice_id),
@@ -166,7 +166,7 @@ create table public.appointments (
   status          public.appointment_status not null default 'confirmed',
   source          text not null default 'app' check (source in ('app', 'os', 'flow')),
   cancelled_at    timestamptz,
-  cancelled_by    uuid references auth.users (id),
+  cancelled_by    uuid references auth.users (id) on delete set null,
   cancel_reason   text,
   reminder_sent_at timestamptz,
   created_at      timestamptz not null default now(),
@@ -263,7 +263,7 @@ create table public.marketing_approvals (
   item       text not null,
   status     text not null default 'pending' check (status in ('pending', 'approved', 'changes_requested')),
   comment    text,
-  decided_by uuid references auth.users (id),
+  decided_by uuid references auth.users (id) on delete set null,
   decided_at timestamptz,
   created_at timestamptz not null default now()
 );
