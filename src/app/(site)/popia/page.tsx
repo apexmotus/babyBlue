@@ -1,7 +1,7 @@
-import type { Metadata } from "next";
 import { Section } from "@/components/site/blocks";
+import { pageMeta } from "@/lib/meta";
 
-export const metadata: Metadata = { title: "POPIA position", description: "How BabyBlue approaches the protection of personal information under POPIA." };
+export const metadata = pageMeta("POPIA position", "A plain-language summary of how BabyBlue approaches the protection of personal information under POPIA. Not legal advice and not a certification.", "/popia");
 
 export default function Popia() {
   return (

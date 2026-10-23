@@ -1,7 +1,7 @@
 import { Section } from "@/components/site/blocks";
 import { pageMeta } from "@/lib/meta";
 
-export const metadata = pageMeta("Terms of use", "The terms for using the BabyBlue website.", "/terms");
+export const metadata = pageMeta("Terms of use", "The terms for using the BabyBlue website: acceptable use, demonstrations, liability and governing South African law. Draft for legal review.", "/terms");
 
 export default function Terms() {
   return (

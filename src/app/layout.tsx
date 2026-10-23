@@ -18,8 +18,9 @@ export const metadata: Metadata = {
     locale: "en_ZA",
     title: `BabyBlue — ${SITE.tagline}`,
     description: SITE.description,
+    images: [{ url: "/og", width: 1200, height: 630, alt: "BabyBlue — Care, connected." }],
   },
-  twitter: { card: "summary_large_image", title: `BabyBlue — ${SITE.tagline}`, description: SITE.description },
+  twitter: { card: "summary_large_image", title: `BabyBlue — ${SITE.tagline}`, description: SITE.description, images: ["/og"] },
   robots: SITE.indexable ? { index: true, follow: true } : { index: false, follow: false },
 };
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#14364b" };
