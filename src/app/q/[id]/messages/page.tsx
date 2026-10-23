@@ -35,7 +35,7 @@ export default function Messages() {
       <div className="m-app">
         <div className="m-head">
           <div className="flex center gap12">
-            <Link href={`/q/${id}`} className="x-btn" aria-label="Back"><ArrowLeft size={18} /></Link>
+            <Link href={`/q/${id}`} className="icon-btn" aria-label="Back"><ArrowLeft size={18} /></Link>
             <h1 style={{ fontSize: 16, fontWeight: 600 }}>What we&apos;ll send you</h1>
           </div>
           <Logo size={26} />
@@ -47,7 +47,7 @@ export default function Messages() {
           {patient.whatsapp && (
             <section>
               <div className="flex center between" style={{ marginBottom: 10 }}>
-                <p className="b6 flex center gap8"><MessageCircle size={16} color="#0fae7b" /> WhatsApp</p>
+                <p className="b6 flex center gap8"><MessageCircle size={16} color="#2b7557" /> WhatsApp</p>
                 <span className="pill sm good">Primary</span>
               </div>
               <p className="hint" style={{ marginBottom: 10 }}>{name} · verified</p>

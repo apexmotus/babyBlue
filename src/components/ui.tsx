@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { Check, FlaskConical, MonitorSmartphone, RotateCcw, ShieldCheck, UserPlus, Users, WifiOff, X, Smartphone } from "lucide-react";
 import type { Status, Urgency } from "@/lib/types";
@@ -9,20 +10,13 @@ import { resetDemo, simulateJoin, useDB } from "@/lib/store";
 import { useOffline } from "@/lib/offline";
 
 /* ───── logo ───── */
-export function Logo({ href = "/", size = 28 }: { href?: string; size?: number }) {
+export function Logo({ href = "/", size = 28, light = false }: { href?: string; size?: number; light?: boolean }) {
   return (
-    <Link href={href} className="logo" aria-label="BabyBlue home">
-      <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
-        <defs>
-          <linearGradient id="bbg" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#2f86d6" />
-            <stop offset="1" stopColor="#0b5aa8" />
-          </linearGradient>
-        </defs>
-        <path d="M16 2.5 4.5 6.6v8.2c0 7.1 4.7 12.3 11.5 14.7 6.8-2.4 11.5-7.6 11.5-14.7V6.6L16 2.5Z" fill="url(#bbg)" />
-        <path d="M10.5 16.2l4 4 7.2-8" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-      BabyBlue
+    <Link href={href} className="logo" aria-label="BabyBlue home" style={{ fontSize: size * 0.86, color: light ? "#fff" : "var(--deep)", fontWeight: 800, letterSpacing: "-0.04em" }}>
+      <span aria-hidden="true">
+        baby<span style={{ color: light ? "var(--sky)" : "var(--connected)" }}>blue</span>
+        <span style={{ color: "var(--connected)" }}>.</span>
+      </span>
     </Link>
   );
 }
@@ -107,7 +101,7 @@ export function Modal({
             <h2>{title}</h2>
             {sub && <p className="muted t13" style={{ marginTop: 4 }}>{sub}</p>}
           </div>
-          <button className="x-btn" onClick={onClose} aria-label="Close">
+          <button className="icon-btn" onClick={onClose} aria-label="Close">
             <X size={18} />
           </button>
         </div>
@@ -153,6 +147,7 @@ export function Empty({ title, children }: { title: string; children?: ReactNode
 
 /* ───── demo panel ───── */
 export function DemoPanel() {
+  const path = usePathname();
   const [open, setOpen] = useState(false);
   const { offline, setOffline } = useOffline();
   const toast = useToast();
@@ -165,6 +160,7 @@ export function DemoPanel() {
     return () => document.removeEventListener("mousedown", h);
   }, [open]);
   const demoVisit = db.visits.find((v) => v.id === DEMO_VISIT_ID);
+  if (!["/c", "/q", "/staff", "/find"].some((p) => path === p || path.startsWith(`${p}/`))) return null;
   return (
     <div className="demo-fab" ref={ref}>
       {open && (

@@ -33,7 +33,7 @@ export default function Intake() {
       <Wrap back={back} title="Quick intake">
         <div className="card r16" style={{ padding: 28, textAlign: "center" }}>
           <div style={{ width: 56, height: 56, borderRadius: 999, background: "var(--accent-50)", margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Check size={28} color="#0fae7b" />
+            <Check size={28} color="#2b7557" />
           </div>
           <p style={{ fontSize: 22, fontWeight: 700, marginTop: 14, letterSpacing: -0.4 }}>Intake submitted</p>
           <p className="muted" style={{ marginTop: 8 }}>
@@ -103,7 +103,7 @@ function Wrap({ children, back, title, sub }: { children: React.ReactNode; back:
       <div className="m-app">
         <div className="m-head">
           <div className="flex center gap12">
-            <Link href={back} className="x-btn" aria-label="Back"><ArrowLeft size={18} /></Link>
+            <Link href={back} className="icon-btn" aria-label="Back"><ArrowLeft size={18} /></Link>
             <div>
               <h1 style={{ fontSize: 16, fontWeight: 600 }}>{title ?? "Intake"}</h1>
               {sub && <p className="muted t12">{sub}</p>}

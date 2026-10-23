@@ -1,20 +1,32 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Manrope } from "next/font/google";
 import "./globals.css";
 import { DemoPanel, ToastProvider } from "@/components/ui";
+import { SITE } from "@/lib/site";
 
-const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-inter" });
+const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-inter", display: "swap" });
+const manrope = Manrope({ subsets: ["latin"], weight: ["500", "600", "700", "800"], variable: "--font-manrope", display: "swap" });
 
 export const metadata: Metadata = {
-  title: "BabyBlue — live queues for clinics (demo)",
-  description: "Interactive demo of BabyBlue: patients join a clinic queue from their phone, reception runs one live list. All data is made up.",
-  robots: { index: false, follow: false },
+  metadataBase: new URL(SITE.url),
+  title: { default: `BabyBlue — ${SITE.tagline}`, template: "%s · BabyBlue" },
+  description: SITE.description,
+  applicationName: "BabyBlue",
+  openGraph: {
+    type: "website",
+    siteName: "BabyBlue",
+    locale: "en_ZA",
+    title: `BabyBlue — ${SITE.tagline}`,
+    description: SITE.description,
+  },
+  twitter: { card: "summary_large_image", title: `BabyBlue — ${SITE.tagline}`, description: SITE.description },
+  robots: SITE.indexable ? { index: true, follow: true } : { index: false, follow: false },
 };
-export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#0b5aa8" };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#14364b" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-ZA" className={inter.variable}>
+    <html lang="en-ZA" className={`${inter.variable} ${manrope.variable}`}>
       <body>
         <ToastProvider>
           {children}

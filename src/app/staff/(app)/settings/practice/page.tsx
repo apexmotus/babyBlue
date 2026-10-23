@@ -34,7 +34,7 @@ export default function Practice() {
   const url = origin ? `${origin}/c/${s.slug}` : "";
   useEffect(() => {
     if (!url) return;
-    QRCode.toDataURL(url, { margin: 1, width: 640, color: { dark: "#0b5aa8", light: "#ffffff" } }).then(setQr).catch(() => setQr(""));
+    QRCode.toDataURL(url, { margin: 1, width: 640, color: { dark: "#1d6f86", light: "#ffffff" } }).then(setQr).catch(() => setQr(""));
   }, [url]);
 
   const errors = { name: !name.trim(), slug: slug.length < 3, address: address.trim().length < 6, phone: !validPhone(phone) };

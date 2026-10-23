@@ -44,11 +44,11 @@ export default function IntakeBuilder() {
 
       {adding && (
         <section className="card" style={{ padding: 20, marginBottom: 20 }}>
-          <div className="flex between center"><h2 style={{ fontSize: 16 }}>Add a question</h2><button className="x-btn" aria-label="Close" onClick={() => setAdding(false)}><X size={16} /></button></div>
+          <div className="flex between center"><h2 style={{ fontSize: 16 }}>Add a question</h2><button className="icon-btn" aria-label="Close" onClick={() => setAdding(false)}><X size={16} /></button></div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 12, marginTop: 14 }}>
             {([["choice", ListChecks, "Multiple choice", "Pick one from a list you define"], ["scale", SlidersHorizontal, "Scale", "A number in a range, with end labels"], ["yesno", ToggleLeft, "Yes / no", "Two tap targets, nothing to type"]] as const).map(([t, I, l, d]) => (
               <button key={t} className="card" style={{ padding: 16, textAlign: "left" }} onClick={() => add(t)}>
-                <I size={20} color="#0b5aa8" />
+                <I size={20} color="#1d6f86" />
                 <p className="b6 t13" style={{ marginTop: 8 }}>{l}</p>
                 <p className="muted t12">{d}</p>
               </button>

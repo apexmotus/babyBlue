@@ -260,7 +260,7 @@ export function BookingModal({ onClose, patientId }: { onClose: () => void; pati
       <label className="check"><input type="checkbox" checked={confirm} onChange={(e) => setConfirm(e.target.checked)} /> Send a WhatsApp confirmation now and a reminder the evening before</label>
       {time && picked && (
         <p className="b6 t13" style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <UserRound size={15} color="#0b5aa8" /> {weekdayShort(day)}, {time} with {doctor}
+          <UserRound size={15} color="#1d6f86" /> {weekdayShort(day)}, {time} with {doctor}
         </p>
       )}
     </Modal>

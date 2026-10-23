@@ -98,7 +98,7 @@ export default function ClinicPage() {
       </button>
       {myVisitActive && (
         <Link href={`/q/${DEMO_VISIT_ID}`} className="row-card" style={{ color: "inherit" }}>
-          <span className="ic" style={{ background: "var(--primary-50)" }}><Clock size={18} color="#0b5aa8" /></span>
+          <span className="ic" style={{ background: "var(--primary-50)" }}><Clock size={18} color="#1d6f86" /></span>
           <div className="grow">
             <p className="t">Already in the queue?</p>
             <p className="s">Open Thabo&apos;s live status (demo)</p>

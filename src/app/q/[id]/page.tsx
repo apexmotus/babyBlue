@@ -123,7 +123,7 @@ function Waiting({ db, visit, offline, updated, phone }: { db: DB; visit: Visit;
         <>
           <Link href={`/q/${visit.id}/intake`} className="row-card" style={{ color: "inherit" }}>
             <span className="ic" style={{ background: intakeDone ? "var(--accent-50)" : "var(--primary-50)" }}>
-              {intakeDone ? <Check size={18} color="#0fae7b" /> : <ClipboardList size={18} color="#0b5aa8" />}
+              {intakeDone ? <Check size={18} color="#2b7557" /> : <ClipboardList size={18} color="#1d6f86" />}
             </span>
             <div className="grow">
               <p className="t">{intakeDone ? "Quick intake submitted" : "Complete quick intake"}</p>
@@ -132,7 +132,7 @@ function Waiting({ db, visit, offline, updated, phone }: { db: DB; visit: Visit;
             <span className="t13" style={{ fontWeight: 500, color: "var(--primary)" }}>{intakeDone ? "Edit" : "Start"}</span>
           </Link>
           <Link href={`/q/${visit.id}/messages`} className="row-card" style={{ color: "inherit" }}>
-            <span className="ic" style={{ background: "var(--accent-50)" }}><Bell size={18} color="#0fae7b" /></span>
+            <span className="ic" style={{ background: "var(--accent-50)" }}><Bell size={18} color="#2b7557" /></span>
             <div className="grow">
               <p className="t">We&apos;ll message you when you&apos;re two away</p>
               <p className="s">{patient?.whatsapp ? "WhatsApp" : "SMS"} to {phone}{patient?.whatsapp ? ", SMS if it fails" : ""}</p>
@@ -187,7 +187,7 @@ function InConsult({ db, visit, updated }: { db: DB; visit: Visit; updated: stri
       <div className="card r16" style={{ padding: 24, textAlign: "center" }}>
         <StatusPill status="in_consultation" />
         <div style={{ width: 64, height: 64, borderRadius: 999, background: "var(--primary-50)", margin: "20px auto 0", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <DoorOpen size={30} color="#0b5aa8" />
+          <DoorOpen size={30} color="#1d6f86" />
         </div>
         <p style={{ fontSize: 22, fontWeight: 700, marginTop: 16, letterSpacing: -0.4 }}>You&apos;re being seen now</p>
         <p className="muted" style={{ marginTop: 8 }}>
@@ -221,7 +221,7 @@ function Done({ db, visit }: { db: DB; visit: Visit }) {
       <div className="card r16" style={{ padding: 24, textAlign: "center" }}>
         <StatusPill status="done" />
         <div style={{ width: 56, height: 56, borderRadius: 999, background: "var(--accent-50)", margin: "18px auto 0", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Check size={28} color="#0fae7b" />
+          <Check size={28} color="#2b7557" />
         </div>
         <p style={{ fontSize: 22, fontWeight: 700, marginTop: 14, letterSpacing: -0.4 }}>Visit complete</p>
         <p className="muted" style={{ marginTop: 6 }}>
@@ -268,7 +268,7 @@ function Done({ db, visit }: { db: DB; visit: Visit }) {
         )}
       </div>
       <button className="row-card" style={{ textAlign: "left", width: "100%" }} onClick={() => toast("Demo: follow-up booking isn't wired up")}>
-        <span className="ic" style={{ background: "var(--primary-50)" }}><CalendarPlus size={18} color="#0b5aa8" /></span>
+        <span className="ic" style={{ background: "var(--primary-50)" }}><CalendarPlus size={18} color="#1d6f86" /></span>
         <div className="grow">
           <p className="t">Book a follow-up</p>
           <p className="s">{db.settings.doctors[0]?.replace("Dr N.", "Dr")} suggested two weeks</p>
