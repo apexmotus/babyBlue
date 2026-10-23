@@ -101,7 +101,6 @@ function SearchInner() {
           <input className="a-input" style={{ height: 52, borderRadius: 16 }} value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Search speciality, service or name" aria-label="Search practitioners" />
         </div>
         <button className="a-btn primary" style={{ height: 52, borderRadius: 16 }} type="submit">Search</button>
-        <button className="a-btn secondary icon" style={{ height: 52, width: 52, borderRadius: 16, display: "none" }} type="button" aria-label="Filters" id="open-filters" onClick={() => setFiltersOpen(true)}><SlidersHorizontal size={19} /></button>
       </form>
 
       <div className="pt-filterbar" role="group" aria-label="Quick filters">
