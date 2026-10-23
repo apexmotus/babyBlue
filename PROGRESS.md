@@ -18,9 +18,9 @@ _Last updated: 2026-10-23. Branch: `dev` (local; no git remote yet)._
 ## Phase 1 — Brand and public website (done, verified visually on desktop and mobile)
 
 - Brand system (tokens, Manrope + Inter, wordmark) — see BRAND.md, DESIGN_SYSTEM.md.
-- 13 pages: `/`, `/app`, `/practitioners`, `/os`, `/growth`, `/flow`, `/solutions`, `/pricing`, `/about`, `/contact`, `/waitlist`, `/privacy`, `/terms` (+ `/popia`).
+- 13 pages: `/`, `/app`, `/practitioners`, `/os`, `/growth`, `/flow`, `/solutions`, `/pricing`, `/about`, `/contact`, `/privacy`, `/terms` (+ `/popia`).
 - Homepage with all 12 requested sections, illustrative device mockups, art-directed photography slots.
-- Waitlist + contact forms: accessible, validated client and server side, honeypot, throttling, honest failure states.
+- Contact form: accessible, validated client and server side, honeypot, throttling, honest failure states.
 - SEO: per-page metadata, canonical URLs, generated Open Graph/Twitter image (`/og`), sitemap, robots (noindex until `ALLOW_INDEXING=true`), JSON-LD.
 - Security headers.
 

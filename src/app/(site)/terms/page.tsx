@@ -13,7 +13,7 @@ export default function Terms() {
           <div><strong>Draft for legal review.</strong> These terms cover the BabyBlue marketing website only. Separate terms will apply to the BabyBlue App, OS, Growth and Flow before they launch, and all of them must be reviewed by a South African attorney.</div>
         </div>
         <h2>1. About this website</h2>
-        <p>This website describes BabyBlue and lets you join the waitlist or contact us. Products described here may still be in development. Where something isn&apos;t available, we say so.</p>
+        <p>This website describes BabyBlue and lets you try a demo or contact us. Products described here may still be in development. Where something isn&apos;t available, we say so.</p>
         <h2>2. Not medical advice</h2>
         <p>BabyBlue connects people with independent practitioners and does not provide medical advice, diagnosis or treatment. Practitioners are independent and responsible for the care they provide. In an emergency call 10177 (ambulance) or 112 from a mobile phone.</p>
         <h2>3. Demonstrations</h2>

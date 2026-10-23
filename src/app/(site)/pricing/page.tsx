@@ -5,8 +5,8 @@ import { pageMeta } from "@/lib/meta";
 export const metadata = pageMeta("Pricing — BabyBlue", "How BabyBlue pricing will work: free for patients, simple plans for practices, and quoted marketing services. Final prices are being confirmed with early practices.", "/pricing");
 
 const PLANS = [
-  { name: "Patients", tag: "BabyBlue App", price: "Planned: free", blurb: "Search, compare, book and manage appointments.", items: ["Practitioner search and filters", "Real-time availability", "Reminders and rescheduling", "Appointment history"], cta: ["/waitlist?role=patient", "Join as a patient"] },
-  { name: "Practice", tag: "BabyBlue OS · Flow", price: "Price to be announced", blurb: "Everything a practice needs to run the day.", items: ["Calendar, services and availability", "Appointments, clients and consent records", "Staff accounts and permissions", "Insights from your real data", "Flow queue and QR check-in"], cta: ["/waitlist?role=practitioner", "Register your interest"], hot: true },
+  { name: "Patients", tag: "BabyBlue App", price: "Planned: free", blurb: "Search, compare, book and manage appointments.", items: ["Practitioner search and filters", "Real-time availability", "Reminders and rescheduling", "Appointment history"], cta: ["/patient", "Open the patient app"] },
+  { name: "Practice", tag: "BabyBlue OS · Flow", price: "Price to be announced", blurb: "Everything a practice needs to run the day.", items: ["Calendar, services and availability", "Appointments, clients and consent records", "Staff accounts and permissions", "Insights from your real data", "Flow queue and QR check-in"], cta: ["/practice/login", "Open BabyBlue OS"], hot: true },
   { name: "Group & multi-site", tag: "Multiple practitioners and locations", price: "Custom pricing", blurb: "For larger teams and multi-location practices.", items: ["Everything in Practice", "Multiple practitioners and locations", "Role-based access at scale", "Consolidated insights", "Priority onboarding"], cta: ["/contact", "Talk to us"] },
 ] as const;
 
@@ -28,7 +28,7 @@ export default function Pricing() {
       <Section tone="white">
         <div className="x-notice info" style={{ marginBottom: 32 }}>
           <Info size={20} aria-hidden="true" />
-          <div><strong>No prices are published yet.</strong> Figures like &ldquo;free&rdquo; describe our plan, not a commitment. Nothing is charged during the waitlist.</div>
+          <div><strong>No prices are published yet.</strong> Figures like &ldquo;free&rdquo; describe our plan, not a commitment. Nothing is charged in the demo.</div>
         </div>
         <div className="x-grid x-g3">
           {PLANS.map((p) => (
@@ -52,7 +52,7 @@ export default function Pricing() {
         <Head center eyebrow="Questions" title="Pricing FAQs" />
         <div className="x-narrow x-center"><Faq items={FAQ} /></div>
       </Section>
-      <CtaBand title="Help us get pricing right." lead="Join the waitlist as a practitioner and tell us what would make BabyBlue worth it for your practice." primary={{ href: "/waitlist?role=practitioner", label: "Join the Waitlist" }} secondary={{ href: "/contact", label: "Contact us" }} />
+      <CtaBand title="Help us get pricing right." lead="Try the demo, then tell us what would make BabyBlue worth it for your practice." primary={{ href: "/practice/login", label: "Open BabyBlue OS" }} secondary={{ href: "/contact", label: "Contact us" }} />
     </>
   );
 }

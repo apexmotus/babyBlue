@@ -3,22 +3,24 @@ import { validateLead } from "@/server/leads";
 import { checkRsaId, estimate, makeDemoId } from "@/lib/util";
 
 describe("validateLead (server-side form validation)", () => {
-  const ok = { kind: "waitlist", name: "Naledi Mokoena", email: "Naledi@Example.co.za", role: "practitioner", consent: true };
+  const ok = { name: "Naledi Mokoena", email: "Naledi@Example.co.za", topic: "general", message: "Hello, I have a question.", consent: true };
 
-  it("accepts a valid waitlist signup and normalises it", () => {
-    const { lead, errors } = validateLead({ ...ok, interests: ["os", "growth", "hacker"], province: "Gauteng", speciality: "  Physio   therapy " });
+  it("accepts a valid contact message and normalises it", () => {
+    const { lead, errors } = validateLead({ ...ok, name: "  Naledi   Mokoena " });
     expect(errors).toBeUndefined();
-    expect(lead).toMatchObject({ kind: "waitlist", email: "naledi@example.co.za", interests: ["os", "growth"], speciality: "Physio therapy", province: "Gauteng" });
+    expect(lead).toMatchObject({ kind: "contact", name: "Naledi Mokoena", email: "naledi@example.co.za" });
   });
 
-  it("requires name, a real email, a role and explicit consent", () => {
-    const { errors } = validateLead({ kind: "waitlist", name: "A", email: "nope", consent: false });
-    expect(Object.keys(errors ?? {}).sort()).toEqual(["consent", "email", "name", "role"]);
+  it("ignores a client-supplied kind: everything is a contact message", () => {
+    expect(validateLead({ ...ok, kind: "waitlist" }).lead?.kind).toBe("contact");
   });
 
-  it("refuses unknown roles, provinces and non-boolean consent", () => {
-    expect(validateLead({ ...ok, role: "superadmin" }).errors).toHaveProperty("role");
-    expect(validateLead({ ...ok, province: "Narnia" }).errors).toHaveProperty("province");
+  it("requires name, a real email, a topic, a message and explicit consent", () => {
+    const { errors } = validateLead({ name: "A", email: "nope", consent: false });
+    expect(Object.keys(errors ?? {}).sort()).toEqual(["consent", "email", "message", "name", "topic"]);
+  });
+
+  it("refuses non-boolean consent", () => {
     expect(validateLead({ ...ok, consent: "true" }).errors).toHaveProperty("consent");
   });
 
@@ -35,9 +37,9 @@ describe("validateLead (server-side form validation)", () => {
   });
 
   it("truncates oversized fields instead of trusting them", () => {
-    const { lead } = validateLead({ ...ok, name: "x".repeat(500), speciality: "y".repeat(500) });
+    const { lead } = validateLead({ ...ok, name: "x".repeat(500), message: "y".repeat(9000) });
     expect(lead!.name.length).toBeLessThanOrEqual(120);
-    expect(lead!.speciality!.length).toBeLessThanOrEqual(120);
+    expect(lead!.message!.length).toBeLessThanOrEqual(4000);
   });
 });
 

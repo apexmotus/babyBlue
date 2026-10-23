@@ -17,7 +17,8 @@ const COLS = [
       ["/practitioners", "For practitioners"],
       ["/solutions", "Solutions"],
       ["/pricing", "Pricing"],
-      ["/waitlist", "Join the waitlist"],
+      ["/patient", "Patient app (demo)"],
+      ["/practice/login", "BabyBlue OS (demo)"],
     ],
   },
   {

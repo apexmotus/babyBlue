@@ -17,7 +17,7 @@ Principle: **the database is the security boundary.** Clients use the user's JWT
 | Path | Purpose |
 |---|---|
 | `src/app/(site)/` | Public marketing site (13 pages) + `site.css` |
-| `src/app/api/leads/` | Waitlist/contact endpoint |
+| `src/app/api/leads/` | Contact-form endpoint |
 | `src/app/og/` | Generated Open Graph images |
 | `src/app/c`, `q`, `staff`, `find` | Flow demo (fictional data, local storage) |
 | `src/components/site/` | Nav, footer, blocks, mockups, forms |

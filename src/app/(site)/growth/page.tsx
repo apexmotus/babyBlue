@@ -30,7 +30,7 @@ export default function Growth() {
         eyebrow="BabyBlue Growth"
         title={<>You take care of your patients. <span className="x-accent">We&apos;ll help you take care of business.</span></>}
         lead="You're an expert in your practice. You shouldn't have to be an expert in marketing, too. Request professional, compliant marketing services straight from BabyBlue OS."
-        actions={<><Btn href="/waitlist?role=practitioner" arrow>Join the Waitlist</Btn><Btn href="/contact" variant="outline">Talk to the Growth team</Btn></>}
+        actions={<><Btn href="/practice/login" arrow>Open BabyBlue OS</Btn><Btn href="/contact" variant="outline">Talk to the Growth team</Btn></>}
       />
 
       <Section tone="white">
@@ -92,7 +92,7 @@ export default function Growth() {
         <div className="x-narrow x-center"><Faq items={FAQ} /></div>
       </Section>
 
-      <CtaBand title="Let us help you take care of business." lead="Tell us about your practice and we'll be in touch as Growth services open." primary={{ href: "/waitlist?role=practitioner", label: "Join the Waitlist" }} secondary={{ href: "/contact", label: "Talk to the Growth team" }} />
+      <CtaBand title="Let us help you take care of business." lead="Tell us about your practice and we'll be in touch as Growth services open." primary={{ href: "/practice/login", label: "Open BabyBlue OS" }} secondary={{ href: "/contact", label: "Talk to the Growth team" }} />
     </>
   );
 }

@@ -14,12 +14,11 @@ export default function Privacy() {
         </div>
 
         <h2>1. Who we are</h2>
-        <p>BabyBlue (&ldquo;we&rdquo;) provides an online platform connecting people with practitioners and tools for practitioners to run their practices. For personal information collected through this website (waitlist and contact forms) BabyBlue is the responsible party under the Protection of Personal Information Act, 2013 (POPIA).</p>
+        <p>BabyBlue (&ldquo;we&rdquo;) provides an online platform connecting people with practitioners and tools for practitioners to run their practices. For personal information collected through this website (the contact form) BabyBlue is the responsible party under the Protection of Personal Information Act, 2013 (POPIA).</p>
         <p><strong>Information Officer:</strong> [to be appointed and registered with the Information Regulator before launch]</p>
 
         <h2>2. What we collect on this website</h2>
         <ul>
-          <li><strong>Waitlist:</strong> name, email address, your role, optional speciality or practice type, optional province, and which BabyBlue products interest you.</li>
           <li><strong>Contact form:</strong> name, email address, topic and your message. Please do not include health information.</li>
           <li><strong>Technical data:</strong> basic server logs (such as IP address and browser) used for security and reliability.</li>
         </ul>
@@ -36,7 +35,7 @@ export default function Privacy() {
         <p>Only service providers who help us run the website and email, under agreements that require them to protect your information. We will list them here before launch.</p>
 
         <h2>5. How long we keep it</h2>
-        <p>Waitlist details are kept until you withdraw or we complete the launch process, and then deleted or anonymised. Contact messages are kept only as long as needed to resolve them.</p>
+        <p>Contact messages are kept only as long as needed to resolve them. The demo apps store their fictional data in your own browser, and you can reset it from the account page.</p>
 
         <h2>6. Your rights</h2>
         <p>You may ask us to confirm what we hold about you, correct it, or delete it, and you may withdraw consent at any time or object to processing. Use the <a href="/contact">contact form</a> and choose &ldquo;Privacy request (POPIA)&rdquo;. You may also complain to the Information Regulator of South Africa.</p>

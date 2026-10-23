@@ -22,7 +22,7 @@ export default function Contact() {
           <p className="x-small">For urgent health concerns, contact a practitioner or call 10177 (ambulance) or 112 from a mobile phone. BabyBlue can&apos;t give medical advice.</p>
         </div>
         <div className="x-card" style={{ padding: "clamp(24px,4vw,40px)" }}>
-          <LeadForm kind="contact" />
+          <LeadForm />
         </div>
       </div>
     </Section>

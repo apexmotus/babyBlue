@@ -25,7 +25,7 @@ const FAQ = [
   ["Is BabyBlue OS clinical record software?", "No. BabyBlue OS manages the business side of a practice: scheduling, clients' contact details, consent and administration. It isn't a clinical records system, and it keeps health detail to a minimum on purpose."],
   ["Are the dashboard numbers real?", "Always. Metrics come from your own bookings and payments. If there isn't enough data for a figure to be meaningful, we say so rather than show a placeholder."],
   ["Can I run several practitioners and locations?", "Yes. Add practitioners, locations and staff with role-based permissions. Each practice's data stays isolated from every other practice."],
-  ["Is it available now?", "BabyBlue OS is in development. Join the waitlist to hear about early access."],
+  ["Is it available now?", "There's a working demo you can sign in to now, using fictional practices and data. It is still in development, so features and pricing may change."],
 ] as const;
 
 export default function Os() {
@@ -35,7 +35,7 @@ export default function Os() {
         eyebrow="BabyBlue OS"
         title={<>Your practice, <span className="x-accent">running smoothly.</span></>}
         lead="A practitioner operating system for scheduling, clients, teams and insights, designed around the work you do and nothing you don't."
-        actions={<><Btn href="/waitlist?role=practitioner" arrow>Join the Waitlist</Btn><Btn href="/growth" variant="outline">Explore Growth</Btn></>}
+        actions={<><Btn href="/practice/login" arrow>Open BabyBlue OS</Btn><Btn href="/growth" variant="outline">Explore Growth</Btn></>}
         aside={<div><LaptopMock /><MockCaption /></div>}
       />
 
@@ -96,7 +96,7 @@ export default function Os() {
         <div className="x-narrow x-center"><Faq items={FAQ} /></div>
       </Section>
 
-      <CtaBand title="See BabyBlue OS first." lead="Join the waitlist as a practitioner and we'll invite you to early access when it opens in your area." primary={{ href: "/waitlist?role=practitioner", label: "Join the Waitlist" }} secondary={{ href: "/pricing", label: "See pricing approach" }} />
+      <CtaBand title="See BabyBlue OS first." lead="Sign in to the demo practice and use the calendar, queue and insights with fictional data." primary={{ href: "/practice/login", label: "Open BabyBlue OS" }} secondary={{ href: "/pricing", label: "See pricing approach" }} />
     </>
   );
 }

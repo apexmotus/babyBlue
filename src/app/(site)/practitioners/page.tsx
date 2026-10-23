@@ -11,7 +11,7 @@ const FAQ = [
   ["Do I have to use every part of BabyBlue?", "No. BabyBlue OS, Flow and Growth are modular. Start with the diary and add queue management or marketing support when it makes sense for your practice."],
   ["How does verification work?", "You provide your registration details. We check them against the relevant statutory council's public register before a verified badge is shown on your profile. Until then, your profile says it hasn't been verified."],
   ["Who owns my client data?", "You do. Each practice's data is isolated from every other practice, access is role-based, and client health information is never used to target marketing."],
-  ["What will it cost?", "Pricing is still being finalised with early practices. See the pricing page for the planned structure. Nothing is charged during the waitlist."],
+  ["What will it cost?", "Pricing is still being finalised with early practices. See the pricing page for the planned structure. Nothing is charged in the demo."],
 ] as const;
 
 export default function Practitioners() {
@@ -21,7 +21,7 @@ export default function Practitioners() {
         eyebrow="For practitioners"
         title={<>More time for your practice. <span className="x-accent">More room to grow.</span></>}
         lead="Be found by the people looking for your kind of care, run your diary, team and queue from one place, and get professional marketing support, without becoming a marketer."
-        actions={<><Btn href="/waitlist?role=practitioner" arrow>Join the Waitlist</Btn><Btn href="/os" variant="outline">Explore BabyBlue OS</Btn></>}
+        actions={<><Btn href="/practice/login" arrow>Open BabyBlue OS</Btn><Btn href="/os" variant="outline">Explore BabyBlue OS</Btn></>}
         aside={<PhotoSlot shape="rect" brief="A South African practitioner relaxed at their desk, a patient-friendly practice behind them." style={{ minHeight: 420 }} />}
       />
 
@@ -69,7 +69,7 @@ export default function Practitioners() {
         <Head center eyebrow="Getting started" title="From sign-up to a full diary." />
         <div className="x-steps">
           {[
-            ["Join the waitlist", "Tell us about your practice. We'll reach out as early access opens in your area."],
+            ["Create your practice", "Sign up and tell us about your practice. It takes a few minutes."],
             ["Set up your practice", "Add your services, availability, team and location. We'll help you get it right."],
             ["Get verified", "Share your registration details. We check them before showing a verified badge."],
             ["Open your diary", "Go live to patients, and add Flow or Growth whenever you're ready."],
@@ -104,7 +104,7 @@ export default function Practitioners() {
         <div className="x-narrow x-center"><Faq items={FAQ} /></div>
       </Section>
 
-      <CtaBand title="Ready for more time and more room to grow?" lead="Join the waitlist for early access to BabyBlue OS, Flow and Growth." primary={{ href: "/waitlist?role=practitioner", label: "Join the Waitlist" }} secondary={{ href: "/contact", label: "Talk to us" }} />
+      <CtaBand title="Ready for more time and more room to grow?" lead="Open the working demo of BabyBlue OS, Flow and Growth. It uses fictional data, so you can try everything." primary={{ href: "/practice/login", label: "Open BabyBlue OS" }} secondary={{ href: "/contact", label: "Talk to us" }} />
     </>
   );
 }

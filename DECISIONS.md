@@ -23,11 +23,11 @@ Practices cannot set `verified`. A trigger blocks it and only `set_verification`
 **D-07 · Public queue status exposes only status, position and practice name.**
 Patients hold an unguessable token; there's no public read of queue tables.
 
-**D-08 · Waitlist/contact storage fails loudly.**
+**D-08 · Contact storage fails loudly.**
 Without storage configured the API returns 503 and the form says nothing was saved. It never fakes success. Dev writes to `.data/` (git-ignored).
 
-**D-09 · Primary CTA is "Join the Waitlist".**
-Booking isn't functional yet. Switch to "Find a Practitioner" when `/app` search is live.
+**D-09 · Waitlist removed (2026-10-23). Primary CTAs open the working demo apps.**
+The waitlist page and form were removed at the owner's request. `/waitlist` redirects to `/`. CTAs point to `/patient` and `/practice/login`.
 
 **D-10 · Illustrative mockups and photo placeholders instead of fabricated imagery.**
 No real-looking practitioners, ratings or revenue. Every mockup is captioned. Photography slots state they await commissioned images.

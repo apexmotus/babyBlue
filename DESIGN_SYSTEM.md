@@ -15,7 +15,7 @@ Brand: `--deep --connected --sky --cloud --sage --link`. Semantic: `--primary --
 | `PhotoSlot` | Art-directed placeholder with brief; swap for `next/image` |
 | `FeatureList`, `Faq`, `CtaBand` | Content patterns (`details/summary` FAQ, keyboard-native) |
 | `PhoneMock`, `LaptopMock`, `MockCaption` | Illustrative UI, em-scaled with container queries |
-| `LeadForm` | Waitlist/contact: labelled fields, `aria-invalid`, `aria-describedby`, focus on first error, status regions |
+| `LeadForm` | Contact form: labelled fields, `aria-invalid`, `aria-describedby`, focus on first error, status regions |
 
 ## Product components (`src/components/ui.tsx`, `question.tsx`, `staff-modals.tsx`)
 `Modal` (Esc, focus-safe overlay), `Field`, `Switch`, `Banner`, `Empty`, `StatusPill`, `Toast` provider, appointment/queue rows and tables, `QuestionInput`.

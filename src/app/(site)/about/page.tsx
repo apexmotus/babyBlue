@@ -43,7 +43,7 @@ export default function About() {
       <Section tone="sky">
         <Head center eyebrow="Where we are" title="Early, honest and moving carefully." lead="BabyBlue is in development. The queue-management module (BabyBlue Flow) is the first working piece, and you can try it today with fictional data. The consumer app, practitioner OS and Growth workspace are being built. We'll never describe something as available before it is." />
       </Section>
-      <CtaBand title="Come with us." lead="Whether you're looking for care or providing it, we'd love to hear from you." primary={{ href: "/waitlist", label: "Join the Waitlist" }} secondary={{ href: "/contact", label: "Contact us" }} />
+      <CtaBand title="Come with us." lead="Whether you're looking for care or providing it, we'd love to hear from you." primary={{ href: "/patient", label: "Open the patient app" }} secondary={{ href: "/contact", label: "Contact us" }} />
     </>
   );
 }

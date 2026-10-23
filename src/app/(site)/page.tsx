@@ -10,7 +10,7 @@ import { CATEGORIES } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: { absolute: "BabyBlue — Care, connected. Better access to care. Stronger practices." },
-  description: "Find and book practitioners on your schedule. Grow and manage your practice with tools designed around the work you do. Join the BabyBlue waitlist.",
+  description: "Find and book practitioners on your schedule. Grow and manage your practice with tools designed around the work you do. Try the working demo.",
   alternates: { canonical: "/" },
 };
 
@@ -29,7 +29,7 @@ export default function Home() {
             <h1 className="x-h1 x-rise d1">Better access to care.<br /><span className="x-accent">Stronger practices.</span></h1>
             <p className="x-lead x-rise d2">Find and book practitioners on your schedule. Grow and manage your practice with tools designed around the work you do.</p>
             <div className="x-btn-row x-rise d3" style={{ justifyContent: "center" }}>
-              <Btn href="/waitlist" arrow>Join the Waitlist</Btn>
+              <Btn href="/patient" arrow>Open the patient app</Btn>
               <Btn href="/os" variant="outline">Explore BabyBlue OS</Btn>
             </div>
           </div>
@@ -231,9 +231,9 @@ export default function Home() {
             />
             <div className="x-btn-row" style={{ marginTop: 28 }}>
               <Btn href="/app" arrow>Explore the App</Btn>
-              <Btn href="/waitlist" variant="outline">Join the waitlist</Btn>
+              <Btn href="/patient" variant="outline">Open the patient demo</Btn>
             </div>
-            <p className="x-small" style={{ marginTop: 14 }}>The BabyBlue App is in development and is not yet available in app stores.</p>
+            <p className="x-small" style={{ marginTop: 14 }}>The demo runs in your browser with fictional practices. The BabyBlue App is not yet available in app stores.</p>
           </div>
           <div style={{ display: "flex", justifyContent: "center", gap: "4%", alignItems: "center" }}>
             <PhoneMock className="x-float" />
@@ -346,9 +346,9 @@ export default function Home() {
       {/* 11 · CTA */}
       <CtaBand
         title="Care, connected."
-        lead="Join the waitlist to hear first when BabyBlue opens in your area. Tell us whether you're looking for care or providing it, and we'll tailor what we send you."
-        primary={{ href: "/waitlist", label: "Join the Waitlist" }}
-        secondary={{ href: "/contact", label: "Talk to us" }}
+        lead="Looking for care or providing it? Open the working demo for your side. Every practice and patient in it is fictional."
+        primary={{ href: "/patient", label: "Open the patient app" }}
+        secondary={{ href: "/practice/login", label: "Open BabyBlue OS" }}
       />
     </>
   );

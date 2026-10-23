@@ -42,7 +42,8 @@ export function Nav() {
         </nav>
         <div className="x-nav-cta">
           <Link href="/contact" className="x-btn x-btn-outline x-btn-sm">Contact</Link>
-          <Link href="/waitlist" className="x-btn x-btn-primary x-btn-sm">Join the waitlist</Link>
+          <Link href="/practice/login" className="x-btn x-btn-outline x-btn-sm">Practice login</Link>
+          <Link href="/patient" className="x-btn x-btn-primary x-btn-sm">Open the app</Link>
           <button ref={btn} className="x-burger" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} aria-controls="x-drawer" onClick={() => setOpen((o) => !o)}>
             {open ? <X size={22} /> : <Menu size={22} />}
           </button>
@@ -58,7 +59,8 @@ export function Nav() {
           <Link href="/os" className="x-dl">BabyBlue OS</Link>
           <Link href="/flow" className="x-dl">BabyBlue Flow</Link>
           <Link href="/contact" className="x-dl">Contact</Link>
-          <Link href="/waitlist" className="x-btn x-btn-primary" style={{ marginTop: 24 }}>Join the waitlist</Link>
+          <Link href="/practice/login" className="x-dl">Practice login</Link>
+          <Link href="/patient" className="x-btn x-btn-primary" style={{ marginTop: 24 }}>Open the app</Link>
         </div>
       )}
     </header>

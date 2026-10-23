@@ -21,7 +21,7 @@ export default function Popia() {
         <h2>Consent and rights</h2>
         <p>Record storage is opt-in and can be withdrawn. People can ask a practice, or us, to access, correct or delete their personal information. Use the <a href="/contact">contact page</a> and choose &ldquo;Privacy request&rdquo;.</p>
         <h2>Roles</h2>
-        <p>In most cases the practice is the responsible party and BabyBlue acts as an operator under a written agreement. Where BabyBlue itself decides why and how information is processed (for example, waitlist sign-ups) we are the responsible party. An Information Officer will be registered before launch.</p>
+        <p>In most cases the practice is the responsible party and BabyBlue acts as an operator under a written agreement. Where BabyBlue itself decides why and how information is processed (for example, contact-form messages) we are the responsible party. An Information Officer will be registered before launch.</p>
       </div>
     </Section>
   );

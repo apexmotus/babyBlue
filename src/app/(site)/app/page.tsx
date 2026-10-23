@@ -4,10 +4,10 @@ import { MockCaption, PhoneMock } from "@/components/site/mocks";
 import { pageMeta } from "@/lib/meta";
 import { CATEGORIES } from "@/lib/site";
 
-export const metadata = pageMeta("BabyBlue App — find and book practitioners", "Your next appointment, a few taps away. Search practitioners by speciality, service and location, see real availability and book in minutes. Join the BabyBlue waitlist.", "/app");
+export const metadata = pageMeta("BabyBlue App — find and book practitioners", "Your next appointment, a few taps away. Search practitioners by speciality, service and location, see real availability and book in minutes. Try the working demo.", "/app");
 
 const FAQ = [
-  ["Is the BabyBlue App available to download?", "Not yet. The app is in development and isn't in any app store. Join the waitlist and we'll tell you as soon as early access opens in your area."],
+  ["Is the BabyBlue App available to download?", "There's a working web demo you can open right now, using fictional practices and data. The BabyBlue App itself isn't in any app store yet."],
   ["Does it cost anything to book?", "We plan for searching and booking to be free for patients. Practitioners set their own consultation fees, and we'll show them upfront wherever a practitioner shares them. Pricing details will be confirmed before launch."],
   ["How do I know a practitioner is qualified?", "A verified badge only appears once we've checked registration against the relevant statutory council's public register. If a profile isn't verified, it says so."],
   ["Will you show me real availability?", "Yes. Times come directly from the practitioner's diary, and a slot is held for you while you complete your booking so two people can't take the same time."],
@@ -21,7 +21,7 @@ export default function AppPage() {
         eyebrow="BabyBlue App"
         title={<>Your next appointment, <span className="x-accent">a few taps away.</span></>}
         lead="Find the right practitioner, see when they're genuinely free, and book in minutes. Care that fits your life, in one clear, calm app."
-        actions={<><Btn href="/waitlist?role=patient" arrow>Join the Waitlist</Btn><Btn href="/practitioners" variant="outline">I&apos;m a practitioner</Btn></>}
+        actions={<><Btn href="/patient" arrow>Open the patient app</Btn><Btn href="/practitioners" variant="outline">I&apos;m a practitioner</Btn></>}
         aside={
           <div style={{ display: "flex", justifyContent: "center", gap: "4%", alignItems: "center" }}>
             <PhoneMock className="x-float" />
@@ -94,7 +94,7 @@ export default function AppPage() {
         <div className="x-narrow x-center"><Faq items={FAQ} /></div>
       </Section>
 
-      <CtaBand title="Be first in line when BabyBlue opens." lead="Tell us where you are and what care you're looking for. We'll email you when early access opens near you." primary={{ href: "/waitlist?role=patient", label: "Join the Waitlist" }} secondary={{ href: "/practitioners", label: "For practitioners" }} />
+      <CtaBand title="Try it yourself." lead="Search practitioners, pick a real open slot and book. The demo runs on fictional practices, so nothing you do is real." primary={{ href: "/patient", label: "Open the patient app" }} secondary={{ href: "/practitioners", label: "For practitioners" }} />
     </>
   );
 }
