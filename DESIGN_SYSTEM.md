@@ -5,6 +5,20 @@ Tokens are CSS custom properties in `src/app/globals.css` (`:root`). Marketing c
 ## Tokens
 Brand: `--deep --connected --sky --cloud --sage --link`. Semantic: `--primary --accent --bg --surface --border --ink --ink-2 --ink-3 --chip`, status `--warn --err` and tints. Shadows `--shadow --shadow-lg`. Fonts `--font-inter`, `--font-manrope` (`--font-head`).
 
+## Front-door layer: "editorial calm" (`src/styles/front.css`, `src/components/front/`)
+The hybrid of BabyBlue's calm, trust-first system and SMOMO's finder-first, tile-led structure (DECISIONS D-15). Prefix `f-`. Loaded by the marketing site and the patient app; the practice OS is untouched.
+
+| Piece | Notes |
+|---|---|
+| Tone tokens | `--tone-deep/sky/sage/mist/sand` in `globals.css`, plus `--r-tile` (28px) and `--ease`. Every tone except deep takes Deep Blue text (all above 9:1) |
+| Display type | `f-display` (hero), `f-h1`, `f-h2`: Manrope 800, tracking −0.04 to −0.045em, line-height 1 to 1.04. `x-h1`/`x-h2` follow the same scale |
+| `Finder` | Speciality + city, routes to the public listing pages, offers only cities that have the chosen speciality. `compact` variant for listing heads |
+| `SpecialityTiles` | 12-column bento of the eight specialities: tone surface, large line icon, number, arrow. `mode="public"` or `"app"`. Add an image layer here when photography is commissioned |
+| `Reveal` + `RevealController` | Server-rendered `data-rv` marker; one client controller hides only below-the-fold blocks after hydration. Visible with no JavaScript or under reduced motion |
+| `ListingPage`, `ListingResults` | Shared body of the three public listing routes; results are client-rendered from the local database |
+| Header | Transparent over the hero (`--nav-h` is pulled under it), glass and hairline once scrolled; mobile menu traps focus |
+| Cards | Practitioner cards use 26px radius and squircle avatars to echo the tiles |
+
 ## Marketing components (`src/components/site/`)
 | Component | Notes |
 |---|---|

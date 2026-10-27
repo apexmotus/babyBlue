@@ -17,6 +17,9 @@ Principle: **the database is the security boundary.** Clients use the user's JWT
 | Path | Purpose |
 |---|---|
 | `src/app/(site)/` | Public marketing site (13 pages) + `site.css` |
+| `src/app/(site)/[speciality]`, `[speciality]/[city]`, `in/[city]` | Public listing pages (see below) |
+| `src/components/front/` · `src/styles/front.css` | Finder, tiles, reveal, listing page: the hybrid front-door layer |
+| `src/lib/directory.ts` · `directory-facets.ts` | Taxonomy and slug helpers (pure) · which pages have practitioners (server only; the swap point for Supabase) |
 | `src/app/api/leads/` | Contact-form endpoint |
 | `src/app/og/` | Generated Open Graph images |
 | `src/app/c`, `q`, `staff`, `find` | Flow demo (fictional data, local storage) |
@@ -35,6 +38,10 @@ Principle: **the database is the security boundary.** Clients use the user's JWT
 - **Flow:** `queue_entries` with an unguessable `public_token`.
 - **Growth:** `marketing_services`, `marketing_requests` (+ assets, approvals, campaign updates, reports).
 - **Platform:** `leads` (service role only), `audit_log` (append-only via functions).
+
+## Public directory pages
+
+`/{speciality}` (e.g. `/physiotherapy`), `/{speciality}/{city}` and `/in/{city}` are statically generated from `directory-facets.ts` with `dynamicParams = false`. The static shell carries the heading, copy, breadcrumbs (JSON-LD), related links and FAQ. Practitioners are filled in client-side by `ListingResults` from the local database (`search_practitioners`, anonymous role), because that database only exists in the browser today. Pairs with nobody listed resolve to an honest empty state, are `noindex` and stay out of the sitemap. The whole site remains `noindex` until `ALLOW_INDEXING=true`.
 
 ## Roles and access
 

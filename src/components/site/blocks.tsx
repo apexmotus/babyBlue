@@ -1,11 +1,12 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ArrowRight, Camera, Plus } from "lucide-react";
+import { Reveal } from "@/components/front/Reveal";
 
-export function Section({ children, tone, id, className = "" }: { children: ReactNode; tone?: "white" | "sky" | "deep"; id?: string; className?: string }) {
+export function Section({ children, tone, id, className = "", reveal = true }: { children: ReactNode; tone?: "white" | "sky" | "deep"; id?: string; className?: string; reveal?: boolean }) {
   return (
     <section id={id} className={`x-section ${tone ?? ""} ${className}`}>
-      <div className="x-container">{children}</div>
+      <div className="x-container">{reveal ? <Reveal>{children}</Reveal> : children}</div>
     </section>
   );
 }

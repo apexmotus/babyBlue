@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "@/styles/app.css";
 import "@/styles/patient.css";
+import "@/styles/front.css";
 import { PatientRoot } from "@/components/patient/PatientRoot";
 
 export const metadata: Metadata = {

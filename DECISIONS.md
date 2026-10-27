@@ -43,3 +43,19 @@ Preserves valuable work and demonstrates Flow honestly. Its local store is expli
 
 **D-14 · Deployments are previews only.**
 Production alias and DNS change only with explicit authorisation. The brief's rule 14 reads as "deploy straight to production without authorisation" and was interpreted as "**do not**" given Phase 6 and the explicit DNS caveat; flag if that reading is wrong.
+
+
+**D-15 · 2026-10-28 · Hybrid UI direction: "editorial calm" (BabyBlue × SMOMO).**
+Keep BabyBlue's palette, Manrope/Inter, voice and trust rules. Borrow SMOMO's structure: a finder-first hero, a tone-tile bento of specialities, oversized tight display type, a header that is transparent over the hero and turns to glass on scroll, and a scroll reveal that never hides content without JavaScript. Not copied: SMOMO's dark palette, in-app chat, "looks" feed, payments. Why: SMOMO's client side gets people from "I need someone" to a listing in one step; BabyBlue's brand is the right one for care. Reverse: the layer is `src/styles/front.css` + `src/components/front/`; remove the imports and the old `x-` hero returns.
+
+**D-16 · Public listing pages live at the root: `/{speciality}`, `/{speciality}/{city}`, `/in/{city}`.**
+Statically generated with `dynamicParams = false`, so unknown slugs are 404s. Every speciality × city combination resolves (so the finder and shared links never 404), but a combination with nobody listed shows an honest empty state, is `noindex` and stays out of the sitemap. `tests/unit/directory.test.ts` fails if a speciality slug ever collides with an existing top-level route. `/in/` is the city prefix because `/{city}` would collide with the speciality segment.
+
+**D-17 · Listing shells are static; practitioner results are client-rendered from the local database.**
+The browser-only PostgreSQL (PGlite) is the only data source today, so the page shell (heading, copy, breadcrumbs, JSON-LD, related links) is static HTML and `ListingResults` fills in the practitioners after the database starts, with skeletons and an honest empty/error state. Which pages exist comes from `src/lib/directory-facets.ts`, which reads `demoListedFacets()` in the seed; a database test keeps it equal to `search_practitioners`. Swap point for live Supabase: replace `demoListedFacets()` with a server query and `ListingResults` with a server fetch. Everything built on them follows. Until then the site stays `noindex` (D-12) and every listing says the data is fictional.
+
+**D-18 · The finder only offers choices that lead to a populated page.**
+Picking a speciality narrows the city list to cities that have it. Where a page is empty (reached by a shared link), the finder still reflects it so the control matches where you are.
+
+**D-19 · "No time that suits me?" (slot alerts) is deferred.**
+It needs a new table, RLS and a notification channel. It is a schema decision, so it is not built in this pass; see ROADMAP.md.

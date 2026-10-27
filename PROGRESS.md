@@ -1,6 +1,6 @@
 # PROGRESS
 
-_Last updated: 2026-10-23. Branch: `dev` (local; no git remote yet)._
+_Last updated: 2026-10-28. Branch: `dev` (local; no git remote yet)._
 
 ## Phase 0 — Repository audit (done)
 
@@ -23,6 +23,23 @@ _Last updated: 2026-10-23. Branch: `dev` (local; no git remote yet)._
 - Contact form: accessible, validated client and server side, honeypot, throttling, honest failure states.
 - SEO: per-page metadata, canonical URLs, generated Open Graph/Twitter image (`/og`), sitemap, robots (noindex until `ALLOW_INDEXING=true`), JSON-LD.
 - Security headers.
+
+## Phase 7 — Front door: public listing pages + hybrid UI (done, 2026-10-28)
+
+Inspired by how SMOMO's client side works (finder-first, browse-before-sign-in, indexable category/city pages), adapted to BabyBlue's rules (D-15 to D-19).
+
+- **Public listing pages:** `/{speciality}` (8), `/{speciality}/{city}` (32) and `/in/{city}` (4), statically generated (44 pages). Unknown slugs are 404s; combinations with nobody listed show an honest empty state, are `noindex` and are left out of the sitemap (checked on a production build with `ALLOW_INDEXING=true`). Breadcrumb JSON-LD, canonical URLs, per-page OG image.
+- **Finder** on the homepage and every listing page: speciality + city, only offers choices that lead to a populated page.
+- **Hybrid UI ("editorial calm"):** new hero (finder, quick links, art-directed stage with an illustrative phone), tone-tile bento of specialities (marketing site and patient app), city links, squircle practitioner cards, oversized display type, header transparent over the hero and glass on scroll, scroll reveal that never hides content without JavaScript, new "Find care" footer column. Checked at 1280px and 390px, no horizontal overflow, no console errors.
+- **Patient app:** hero type, tiles and cards restyled; booking flow untouched and still works from a listing (listing → profile → "Sign in to continue").
+- **Tests:** 85 pass (13 new): taxonomy/slugs, collision with existing routes, facets, and a database test that keeps the static facets equal to `search_practitioners`.
+
+### Known limitations (this phase)
+- Listing results render client-side from the browser-only database, so the HTML a search engine sees holds the heading, copy and links but not the practitioners. Fine while the site is `noindex` and the data is fictional; moving to Supabase means a server fetch (D-17).
+- First visit to a listing waits a few seconds for the demo database to start (skeletons show meanwhile).
+- Tiles and the hero stage are photography placeholders (labelled). No licensed photos yet.
+- Slot alerts ("no time that suits me?") are not built (D-19).
+- The practice OS keeps its previous look.
 
 ## Phase 2–5 — Backend foundation (done and tested) / product UI (not started)
 

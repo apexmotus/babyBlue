@@ -13,6 +13,12 @@
 8. **Growth**: catalogue, request wizard, asset uploads (Supabase Storage, private buckets with RLS), approvals, operator dashboard, reports, deliverables library.
 9. **Quality**: Playwright end-to-end suite, axe accessibility CI, Lighthouse budgets, Sentry, structured logging, rate limiting at the edge.
 
+## Front door follow-ups
+- **Slot alerts / standby ("no time that suits me?")**: patient picks a practitioner and a window and is told when a slot opens. Needs a `slot_alerts` table with RLS, a notification channel and a quota. Replaces SMOMO's open-ended "post a request", which is out of scope for health (D-19).
+- **Server-side listing data** once Supabase is live: replace `demoListedFacets()` and `ListingResults` (D-17), then consider `Physician`/`MedicalBusiness` structured data for verified, real practices only.
+- **Photography** into the hero stage and speciality tiles (add an image layer; layout is ready).
+- Extend the hybrid layer to the practice OS and marketing sub-pages when the brand is formalised.
+
 ## Later
 - Payments (PayFast/Peach/Stripe where available), invoices, revenue reporting.
 - Reviews with verified-visit gating and moderation policy (only after legal review).

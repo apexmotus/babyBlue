@@ -1,4 +1,5 @@
 import { query } from "@/local/db";
+import { SPECIALITY_PAGES } from "./directory";
 
 export interface SearchRow {
   practitioner_id: string;
@@ -45,13 +46,5 @@ export async function getProfile(userId: string | null, id: string): Promise<Pro
 export const getSlots = (userId: string | null, practitioner: string, service: string, days = 14) =>
   query<Slot>(userId, "select starts_at, ends_at from public.get_available_slots($1, $2, current_date, current_date + $3::int)", [practitioner, service, days]);
 
-export const SPECIALITIES = [
-  { name: "General practice", icon: "stethoscope", blurb: "Everyday & family care" },
-  { name: "Dentistry", icon: "smile", blurb: "Check-ups to treatment" },
-  { name: "Physiotherapy", icon: "activity", blurb: "Movement & rehab" },
-  { name: "Psychology", icon: "brain", blurb: "Mental health support" },
-  { name: "Counselling", icon: "messages", blurb: "Talk it through" },
-  { name: "Dietetics", icon: "leaf", blurb: "Food & health" },
-  { name: "Optometry", icon: "eye", blurb: "Eye tests & lenses" },
-  { name: "Chiropractic", icon: "bone", blurb: "Back, neck & posture" },
-] as const;
+/** The specialities offered in discovery: one source of truth with the public listing pages (see directory.ts). */
+export const SPECIALITIES = SPECIALITY_PAGES.map((s) => ({ name: s.name, icon: s.icon, blurb: s.blurb }));

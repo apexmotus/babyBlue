@@ -152,6 +152,28 @@ const PRACTICES: DemoPractice[] = [
   },
 ];
 
+/**
+ * Which (speciality, city) pairs the public directory lists: practitioners at active practices.
+ * This is the static twin of `search_practitioners`, used to generate the public listing routes at build time
+ * (the database itself only exists in the browser). tests/db/seed.test.ts keeps the two in step.
+ */
+export function demoListedFacets(): { speciality: string; city: string; count: number }[] {
+  const counts = new Map<string, number>();
+  for (const P of PRACTICES) {
+    if (P.status !== "active") continue;
+    for (const pr of P.practitioners) {
+      const k = `${pr.speciality}\u0000${P.city}`;
+      counts.set(k, (counts.get(k) ?? 0) + 1);
+    }
+  }
+  return [...counts]
+    .map(([k, count]) => {
+      const [speciality, city] = k.split("\u0000");
+      return { speciality, city, count };
+    })
+    .sort((a, b) => a.speciality.localeCompare(b.speciality) || a.city.localeCompare(b.city));
+}
+
 const MARKETING = [
   ["profile-optimisation", "Professional profile optimisation", "A clear, accurate, well-presented BabyBlue profile: services, specialities, languages, photography and approachable copy."],
   ["practice-website", "Practice website design", "A fast, accessible website that reflects your practice and connects to your BabyBlue diary."],

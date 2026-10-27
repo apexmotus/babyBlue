@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { Logo } from "@/components/ui";
+import { SPECIALITY_PAGES } from "@/lib/directory";
+import { getCities } from "@/lib/directory-facets";
 
 const COLS = [
+  {
+    title: "Find care",
+    links: SPECIALITY_PAGES.map((s) => [`/${s.slug}`, s.plural] as const),
+  },
   {
     title: "Platform",
     links: [
@@ -44,6 +50,11 @@ export function Footer() {
               Care, connected. Better access to care for people, and stronger practices for the practitioners who provide it.
             </p>
             <p style={{ marginTop: 18, fontSize: 13, color: "rgba(255,255,255,0.6)" }}>Starting in South Africa. Expanding across Southern Africa.</p>
+            <p className="f-foot-cities">
+              {getCities().map((c) => (
+                <Link key={c.slug} href={`/in/${c.slug}`}>Care in {c.name}</Link>
+              ))}
+            </p>
           </div>
           {COLS.map((c) => (
             <nav key={c.title} aria-label={c.title}>

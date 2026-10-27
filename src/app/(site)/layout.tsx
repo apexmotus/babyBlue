@@ -1,4 +1,6 @@
 import "./site.css";
+import "@/styles/front.css";
+import { RevealController } from "@/components/front/RevealController";
 import { Footer } from "@/components/site/Footer";
 import { Nav } from "@/components/site/Nav";
 import { SITE } from "@/lib/site";
@@ -20,6 +22,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
       <Nav />
       <main id="main">{children}</main>
       <Footer />
+      <RevealController />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ORG_JSON_LD) }} />
     </div>
   );

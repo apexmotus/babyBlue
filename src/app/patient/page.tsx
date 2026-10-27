@@ -3,16 +3,16 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Activity, ArrowRight, BadgeCheck, Bone, Brain, CalendarClock, Eye, Leaf, MapPin, MessagesSquare, Search, ShieldCheck, SmilePlus, Stethoscope } from "lucide-react";
+import { ArrowRight, BadgeCheck, CalendarClock, MapPin, Search, ShieldCheck } from "lucide-react";
 import { Avatar } from "@/components/app/primitives";
+import { SpecialityTiles } from "@/components/front/SpecialityTiles";
 import { NextAvailable, PractitionerCard, PractitionerCardSkeleton } from "@/components/patient/PractitionerCard";
 import { fmtTime, relativeDay, untilText } from "@/lib/format";
-import { SPECIALITIES, searchPractitioners } from "@/lib/patient-data";
+import { SPECIALITY_PAGES } from "@/lib/directory";
+import { searchPractitioners } from "@/lib/patient-data";
 import { query } from "@/local/db";
 import { useSession } from "@/local/auth";
 import { useQuery } from "@/local/hooks";
-
-const ICONS = { stethoscope: Stethoscope, smile: SmilePlus, activity: Activity, brain: Brain, messages: MessagesSquare, leaf: Leaf, eye: Eye, bone: Bone } as const;
 
 interface Appt { id: string; starts_at: Date; practitioner_name: string; service_name: string; practice_name: string; status: string }
 
@@ -44,7 +44,7 @@ export default function PatientHome() {
     <>
       <section className="pt-hero">
         <div>
-        <h1>Care that fits your life.</h1>
+        <h1>Care that <span className="acc">fits your life.</span></h1>
         <p className="lead">Find a practitioner you trust, see when they are genuinely free, and book in a few taps.</p>
         <form className="pt-search" onSubmit={go} role="search">
           <div className="a-input-wrap">
@@ -60,7 +60,13 @@ export default function PatientHome() {
           </div>
           <button className="a-btn primary lg" type="submit">Search</button>
         </form>
-        <div style={{ display: "flex", gap: 18, flexWrap: "wrap", marginTop: 20, color: "var(--ink-2)", fontSize: 14, fontWeight: 600 }}>
+        <div className="f-quick" style={{ marginTop: 18 }}>
+          <span>Popular</span>
+          {SPECIALITY_PAGES.slice(0, 3).map((s) => (
+            <Link key={s.slug} href={`/patient/search?speciality=${encodeURIComponent(s.name)}`}>{s.plural}</Link>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 18, flexWrap: "wrap", marginTop: 18, color: "var(--ink-2)", fontSize: 14, fontWeight: 600 }}>
           <span style={{ display: "inline-flex", gap: 7, alignItems: "center" }}><CalendarClock size={17} color="#1d6f86" /> Real availability</span>
           <span style={{ display: "inline-flex", gap: 7, alignItems: "center" }}><BadgeCheck size={17} color="#1d6f86" /> Verified when confirmed</span>
           <span style={{ display: "inline-flex", gap: 7, alignItems: "center" }}><ShieldCheck size={17} color="#1d6f86" /> Your data stays private</span>
@@ -102,20 +108,7 @@ export default function PatientHome() {
       <div className="pt-section-h">
         <h2>Browse by speciality</h2>
       </div>
-      <div className="pt-cats">
-        {SPECIALITIES.map((s) => {
-          const Icon = ICONS[s.icon];
-          return (
-            <Link key={s.name} href={`/patient/search?speciality=${encodeURIComponent(s.name)}`} className="pt-cat">
-              <span className="ic"><Icon size={24} /></span>
-              <span>
-                {s.name}
-                <span style={{ display: "block", fontFamily: "var(--font-inter)", fontWeight: 500, fontSize: 12.5, color: "var(--ink-3)", marginTop: 2 }}>{s.blurb}</span>
-              </span>
-            </Link>
-          );
-        })}
-      </div>
+      <SpecialityTiles mode="app" reveal={false} />
 
       <div className="pt-section-h">
         <h2>{availableToday.length >= 3 ? "Available today" : "Next available near you"}</h2>

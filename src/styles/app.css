@@ -1,6 +1,7 @@
 /* BabyBlue application design system (Patient App + Practice OS). Brand tokens live in globals.css. */
 
-.app-root {
+/* `.f-scope` lets app components (cards, chips, skeletons) render inside the marketing site with the same tokens. */
+.app-root, .f-scope {
   --r-sm: 10px; --r: 16px; --r-lg: 24px;
   --line: #dde7e3; --line-2: #eaf0ed;
   --ring: 0 0 0 4px rgba(48, 151, 178, 0.2);
@@ -8,8 +9,12 @@
   --shadow-md: 0 6px 18px -6px rgba(20, 54, 75, 0.18), 0 2px 4px rgba(20, 54, 75, 0.05);
   --shadow-xl: 0 30px 70px -20px rgba(20, 54, 75, 0.4);
   --good: #2b7557; --good-bg: #e6f4ed; --warn-t: #8f4a07; --warn-bg: #fff3d6; --bad: #b4332c; --bad-bg: #fdeceb; --info: #1d6f86; --info-bg: #e3f3f8;
-  background: var(--cloud); color: var(--ink); min-height: 100dvh; font-size: 15px; line-height: 1.5;
 }
+.app-root { background: var(--cloud); color: var(--ink); min-height: 100dvh; font-size: 15px; line-height: 1.5; }
+.f-scope { font-size: 15px; line-height: 1.5; }
+.f-scope h3, .f-scope h4 { letter-spacing: -0.02em; color: var(--deep); font-weight: 800; }
+.f-scope .a-card, .f-scope .a-card * { box-sizing: border-box; }
+.f-scope .tnum { font-variant-numeric: tabular-nums; }
 .app-root *, .app-root *::before, .app-root *::after { box-sizing: border-box; }
 .app-root h1, .app-root h2, .app-root h3, .app-root h4 { font-family: var(--font-head); letter-spacing: -0.02em; color: var(--deep); font-weight: 800; }
 .app-root button { font-family: inherit; }

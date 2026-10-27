@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  ArrowRight, BadgeCheck, Bell, CalendarCheck, CalendarClock, Camera, ChartNoAxesCombined, ClipboardList, Compass, Globe, LayoutDashboard, Lock, Megaphone, MapPinned,
-  Palette, QrCode, Rocket, Search, ShieldCheck, Smartphone, Sparkles, UsersRound, Wallet, Clock, Stethoscope, SmilePlus, Brain, Activity, Leaf, Eye, HeartHandshake, Layers,
+  ArrowRight, ArrowUpRight, BadgeCheck, Bell, CalendarCheck, CalendarClock, Camera, ChartNoAxesCombined, ClipboardList, Compass, Globe, LayoutDashboard, Lock, Megaphone, MapPinned, Palette, QrCode, Rocket, Search, ShieldCheck, Smartphone, Sparkles, UsersRound, Wallet, Clock, Layers,
 } from "lucide-react";
+import { Finder } from "@/components/front/Finder";
+import { Reveal } from "@/components/front/Reveal";
+import { SpecialityTiles } from "@/components/front/SpecialityTiles";
 import { Btn, CtaBand, FeatureList, Head, PhotoSlot, Section } from "@/components/site/blocks";
 import { LaptopMock, MockCaption, PhoneMock } from "@/components/site/mocks";
-import { CATEGORIES } from "@/lib/site";
+import { getCities, getFinderData, getListedSpecialities } from "@/lib/directory-facets";
 
 export const metadata: Metadata = {
   title: { absolute: "BabyBlue — Care, connected. Better access to care. Stronger practices." },
@@ -14,57 +16,57 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-const CAT_ICONS = [Stethoscope, SmilePlus, Brain, Activity, Leaf, HeartHandshake, Eye, Sparkles];
-
 export default function Home() {
+  const finder = getFinderData();
+  const cities = getCities();
+  const specialities = getListedSpecialities();
   return (
     <>
-      {/* 1 · HERO */}
-      <section className="x-hero">
-        <div className="x-blob a" style={{ width: 760, height: 620, left: "-8%", top: 120 }} aria-hidden="true" />
-        <div className="x-blob b" style={{ width: 640, height: 560, right: "-10%", top: 160 }} aria-hidden="true" />
-        <div className="x-container wide">
-          <div className="x-hero-copy">
-            <span className="x-chip dev x-rise"><Rocket size={14} aria-hidden="true" /> In development · early access for South Africa</span>
-            <h1 className="x-h1 x-rise d1">Better access to care.<br /><span className="x-accent">Stronger practices.</span></h1>
-            <p className="x-lead x-rise d2">Find and book practitioners on your schedule. Grow and manage your practice with tools designed around the work you do.</p>
-            <div className="x-btn-row x-rise d3" style={{ justifyContent: "center" }}>
-              <Btn href="/patient" arrow>Open the patient app</Btn>
-              <Btn href="/os" variant="outline">Explore BabyBlue OS</Btn>
-            </div>
-          </div>
-
-          <div className="x-hero-stage">
-            <div className="x-hero-side x-rise d3">
-              <PhotoSlot brief="A South African patient booking an appointment on her phone at home." shape="rect" style={{ minHeight: 210 }} />
-              <div className="x-card soft" style={{ padding: 22 }}>
-                <span className="x-chip sky">For patients</span>
-                <h2 className="x-h3" style={{ marginTop: 12 }}>Find and book practitioners, anytime.</h2>
-                <ul className="x-list" style={{ marginTop: 14, gap: 10 }}>
-                  <li><Search size={18} aria-hidden="true" /><span>Discover practitioners near you</span></li>
-                  <li><CalendarClock size={18} aria-hidden="true" /><span>Book a real time slot on your phone</span></li>
-                  <li><Bell size={18} aria-hidden="true" /><span>Reminders and easy rescheduling</span></li>
-                </ul>
+      {/* 1 · HERO: finder-first. Patients start here; practices are one link away. */}
+      <section className="f-hero">
+        <div className="x-container">
+          <div className="f-hero-grid">
+            <div className="f-hero-copy">
+              <span className="x-chip dev x-rise"><Rocket size={14} aria-hidden="true" /> In development · early access for South Africa</span>
+              <h1 className="f-display x-rise d1">Better access to care.<br /><span className="acc">Stronger practices.</span></h1>
+              <p className="f-lead x-rise d2">Find and book practitioners on your schedule. Grow and manage your practice with tools designed around the work you do.</p>
+              <div id="find" className="x-rise d3" style={{ width: "100%" }}>
+                <Finder data={finder} />
+              </div>
+              <div className="f-quick x-rise d4">
+                <span>Popular</span>
+                {specialities.slice(0, 4).map((s) => (
+                  <Link key={s.slug} href={`/${s.slug}`}>{s.plural}</Link>
+                ))}
+              </div>
+              <div className="f-hero-foot x-rise d4">
+                <span><CalendarClock size={17} aria-hidden="true" /> Real availability</span>
+                <span><BadgeCheck size={17} aria-hidden="true" /> Verified when confirmed</span>
+                <span><ShieldCheck size={17} aria-hidden="true" /> Your data stays private</span>
+              </div>
+              <div className="f-hero-foot x-rise d4">
+                <Link href="/patient" className="x-eyebrow">Open the patient app <ArrowRight size={14} aria-hidden="true" /></Link>
+                <Link href="/os" className="x-eyebrow">Run a practice? Explore BabyBlue OS <ArrowRight size={14} aria-hidden="true" /></Link>
               </div>
             </div>
 
-            <div className="x-hero-devices x-rise d2">
-              <LaptopMock />
-              <PhoneMock className="x-float" />
-              <MockCaption />
-            </div>
-
-            <div className="x-hero-side x-rise d4">
-              <PhotoSlot brief="A practitioner in a South African practice, reviewing the day on a laptop." shape="rect" style={{ minHeight: 210 }} />
-              <div className="x-card soft" style={{ padding: 22 }}>
-                <span className="x-chip sage">For practitioners</span>
-                <h2 className="x-h3" style={{ marginTop: 12 }}>Get more customers. Run a smarter practice.</h2>
-                <ul className="x-list" style={{ marginTop: 14, gap: 10 }}>
-                  <li><Megaphone size={18} aria-hidden="true" /><span>Marketing services, built in</span></li>
-                  <li><CalendarCheck size={18} aria-hidden="true" /><span>Calendar, clients and practice admin</span></li>
-                  <li><ChartNoAxesCombined size={18} aria-hidden="true" /><span>Insights from your own data</span></li>
-                </ul>
-              </div>
+            <div className="x-rise d2">
+              <figure className="f-stage" style={{ margin: 0 }} aria-label="Photography placeholder: a South African patient booking an appointment on her phone at home.">
+                <figcaption className="f-stage-cap">
+                  <b><Camera size={13} aria-hidden="true" /> Photography to be commissioned</b>
+                  A South African patient booking an appointment on her phone at home.
+                </figcaption>
+                <div className="f-chipcard one">
+                  <span className="x-icon"><CalendarClock size={20} aria-hidden="true" /></span>
+                  <div><b>Real availability</b>Straight from the practitioner&apos;s diary</div>
+                </div>
+                <div className="f-chipcard two">
+                  <span className="x-icon sage"><BadgeCheck size={20} aria-hidden="true" /></span>
+                  <div><b>Verified when confirmed</b>Checked against council registers</div>
+                </div>
+                <PhoneMock />
+              </figure>
+              <div className="f-stage-note"><MockCaption /></div>
             </div>
           </div>
         </div>
@@ -200,20 +202,34 @@ export default function Home() {
         </div>
       </Section>
 
-      {/* 5 · CATEGORIES */}
+      {/* 5 · SPECIALITIES AND CITIES: tiles open the public, indexable listing pages */}
       <Section>
-        <Head eyebrow="Care for every stage of life" title="From everyday care to specialised support." lead="BabyBlue is built for the whole spectrum of practitioners, from GPs and dentists to therapists, physiotherapists and wellness professionals." />
-        <div className="x-cats">
-          {CATEGORIES.map((c, i) => {
-            const Ic = CAT_ICONS[i];
-            return (
-              <div className="x-cat" key={c.slug}>
-                <span className="x-icon"><Ic size={24} aria-hidden="true" /></span>
-                <div><b>{c.name}</b><span>{c.blurb}</span></div>
-              </div>
-            );
-          })}
+        <div className="f-row-head">
+          <div className="x-stack" style={{ ["--gap" as string]: "14px" }}>
+            <span className="f-kicker">Care for every stage of life</span>
+            <h2 className="f-h2">From everyday care to <span className="acc">specialised support.</span></h2>
+          </div>
+          <p className="f-lead">BabyBlue is built for the whole spectrum of practitioners, from GPs and dentists to therapists, physiotherapists and wellness professionals.</p>
         </div>
+        <SpecialityTiles />
+
+        <div className="f-row-head" style={{ marginTop: "clamp(56px, 8vw, 104px)" }}>
+          <div className="x-stack" style={{ ["--gap" as string]: "14px" }}>
+            <span className="f-kicker">Find care in your city</span>
+            <h2 className="f-h2">Start with <span className="acc">where you are.</span></h2>
+          </div>
+          <p className="f-lead">Each city page lists only practitioners who have opened a diary on BabyBlue, so every time you see can be booked.</p>
+        </div>
+        <ul className="f-cities">
+          {cities.map((c, i) => (
+            <Reveal as="li" key={c.slug} delay={i * 70}>
+              <Link className="f-city" href={`/in/${c.slug}`}>
+                <span>{c.name}<small>See who&apos;s available</small></span>
+                <span className="go" aria-hidden="true"><ArrowUpRight size={20} /></span>
+              </Link>
+            </Reveal>
+          ))}
+        </ul>
       </Section>
 
       {/* 6 · APP DEMO */}

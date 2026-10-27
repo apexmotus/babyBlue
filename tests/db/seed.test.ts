@@ -3,7 +3,8 @@ import { btree_gist } from "@electric-sql/pglite/contrib/btree_gist";
 import { pgcrypto } from "@electric-sql/pglite/contrib/pgcrypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { SQL_FILES } from "@/local/sql.generated";
-import { seedDemoData } from "@/local/seed";
+import { specialityByName } from "@/lib/directory";
+import { demoListedFacets, seedDemoData } from "@/local/seed";
 import { REFRESH_SQL } from "@/local/refresh";
 
 let db: PGlite;
@@ -43,6 +44,19 @@ describe("local demo data", () => {
     expect(rows.every((r) => r.next_available)).toBe(true);
     expect(rows.some((r) => r.display_name === "Dr Rebecca Mahlangu")).toBe(false);
     expect(rows.filter((r) => r.verification_status === "verified").length).toBeGreaterThanOrEqual(7);
+  });
+
+  it("keeps the static directory facets in step with what the database lists (public listing routes are generated from them)", async () => {
+    await db.exec("set role anon");
+    const rows = (await db.query<{ speciality: string; city: string }>("select speciality, city from public.search_practitioners(null, null, null, false, 100)")).rows;
+    await db.exec("reset role");
+    const live: Record<string, number> = {};
+    for (const r of rows) {
+      live[`${r.speciality}|${r.city}`] = (live[`${r.speciality}|${r.city}`] ?? 0) + 1;
+      // every listed speciality needs a public page, or its practitioners could never be linked to
+      expect(specialityByName(r.speciality), `no listing page for ${r.speciality}`).toBeDefined();
+    }
+    expect(Object.fromEntries(demoListedFacets().map((f) => [`${f.speciality}|${f.city}`, f.count]))).toEqual(live);
   });
 
   it("gives demo patients upcoming and past appointments", async () => {

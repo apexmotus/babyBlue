@@ -31,6 +31,16 @@
   --shadow: 0 1px 2px rgba(20, 54, 75, 0.05), 0 2px 6px rgba(20, 54, 75, 0.06);
   --shadow-lg: 0 24px 60px -12px rgba(20, 54, 75, 0.28);
   --font-head: var(--font-manrope), Manrope, system-ui, sans-serif;
+
+  /* Hybrid "editorial calm": surfaces for tiles and panels, drawn from the brand palette.
+     Every tone except deep takes Deep Blue text (all above 9:1). */
+  --tone-deep: var(--deep);
+  --tone-sky: var(--sky);
+  --tone-sage: #cfe8dc;
+  --tone-mist: #dfe9f6;
+  --tone-sand: #f1e8d8;
+  --r-tile: 28px;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 * {
