@@ -71,6 +71,6 @@ Built and verified against a real Postgres engine (PGlite, PostgreSQL 18) — 49
 ## Blockers needing a decision
 
 1. **Supabase project.** Creating one may carry cost, so it needs authorisation (or give me credentials). Unblocks: working waitlist on the preview, auth, booking, OS, Growth, Flow on real data.
-2. **Production promotion/DNS.** Not touched. The existing `babyblue-demo.vercel.app` production alias still serves the previous demo until you approve promoting this build.
+2. ~~Production promotion/DNS~~ **Done 2026-10-28** on the owner's explicit instruction: `dev` → `staging` → `main`, then `main` deployed to `babyblue-demo.vercel.app`. DNS and custom domains untouched. Rollback target (the previous production build, 23 Oct): `babyblue-demo-ct2m9tbm6-jameel-the-designers-projects.vercel.app`.
 3. **Transactional email provider** (Resend, Postmark, etc.) and a sending domain.
 4. **Photography** and a decision on who verifies practitioners (staff process for checking council registers).

@@ -59,3 +59,6 @@ Picking a speciality narrows the city list to cities that have it. Where a page 
 
 **D-19 · "No time that suits me?" (slot alerts) is deferred.**
 It needs a new table, RLS and a notification channel. It is a schema decision, so it is not built in this pass; see ROADMAP.md.
+
+**D-20 · 2026-10-28 · Released to production on the owner's explicit instruction; collaborator access for Katlego.**
+Flow used: `dev` → `staging` → `main` (branches created from `dev`; the remote had only `dev` and an archive branch), then `vercel deploy --prod` from `main`. D-14 still stands for future releases: production needs the owner's explicit say-so each time. The Vercel project is not linked to GitHub (deploys are manual), so a merge never deploys by itself. Katlego (`katlegomafane0-debug`) was invited with Write access so edits go through pull requests and reversals through `git revert` or GitHub's Revert button (see CONTRIBUTING.md). `main` has no branch protection (not available on this plan for a private repo), so nobody should force-push. The site stays `noindex` (D-12) and all practitioners are fictional.

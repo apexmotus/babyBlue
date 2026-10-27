@@ -26,8 +26,8 @@ vercel deploy --scope jameel-the-designers-projects      # preview (default)
 ```
 1. Set env vars from `.env.example` in the Vercel project (Preview and Production).
 2. Keep `ALLOW_INDEXING` unset/false until the production domain is ready.
-3. **Production promotion and DNS require explicit authorisation** and are not done here (`vercel --prod` re-points `babyblue-demo.vercel.app`).
+3. **Production promotion and DNS require the owner's explicit authorisation, each time.** Production is the `main` branch deployed with `vercel deploy --prod --scope jameel-the-designers-projects`, which re-points `babyblue-demo.vercel.app`. The Vercel project is not linked to GitHub, so merging does not deploy. Roll back from the Vercel dashboard (Deployments → Promote an earlier one) or `vercel rollback`.
 4. After deploy verify: `/`, `/patient`, `/practice/login`, `/contact` (submit a test), `/sitemap.xml`, `/robots.txt`, `/og?title=Test`.
 
 ## Conventions
-Branches: work on `dev`; `staging` and `main` only by explicit merge. Commit messages: `type: BabyBlue — what changed`.
+Branches: work on `dev`; `staging` and `main` only by explicit merge. Commit messages: `type: BabyBlue — what changed`. How to edit and how to undo a change: see [CONTRIBUTING.md](CONTRIBUTING.md).
