@@ -3,7 +3,9 @@
 // Records come from OpenStreetMap (see source.json, scripts/directory/ and data/directory/README.md).
 import type { DirectoryPractice } from "@/lib/practices/types";
 import b001 from "./batch-001.json";
+import b002 from "./batch-002.json";
 
 export const BATCHES: DirectoryPractice[][] = [
   b001 as unknown as DirectoryPractice[],
+  b002 as unknown as DirectoryPractice[],
 ];
