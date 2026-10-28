@@ -4,8 +4,10 @@
 import type { DirectoryPractice } from "@/lib/practices/types";
 import b001 from "./batch-001.json";
 import b002 from "./batch-002.json";
+import b003 from "./batch-003.json";
 
 export const BATCHES: DirectoryPractice[][] = [
   b001 as unknown as DirectoryPractice[],
   b002 as unknown as DirectoryPractice[],
+  b003 as unknown as DirectoryPractice[],
 ];
