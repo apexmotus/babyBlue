@@ -16,6 +16,7 @@ import b011 from "./batch-011.json";
 import b012 from "./batch-012.json";
 import b013 from "./batch-013.json";
 import b014 from "./batch-014.json";
+import b015 from "./batch-015.json";
 
 export const BATCHES: DirectoryPractice[][] = [
   b001 as unknown as DirectoryPractice[],
@@ -32,4 +33,5 @@ export const BATCHES: DirectoryPractice[][] = [
   b012 as unknown as DirectoryPractice[],
   b013 as unknown as DirectoryPractice[],
   b014 as unknown as DirectoryPractice[],
+  b015 as unknown as DirectoryPractice[],
 ];
