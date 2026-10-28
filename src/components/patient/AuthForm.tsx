@@ -17,18 +17,19 @@ function Inner({ mode }: { mode: "login" | "signup" }) {
   const next = useSearchParams().get("next") || "/patient";
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [pw, setPw] = useState("");
   const [agree, setAgree] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  async function go(e: string, p: string, n?: string) {
+  async function go(e: string, p: string, n?: string, wa?: string) {
     setBusy(true);
     setError("");
     try {
       if (mode === "signup" && n !== undefined) {
         if (!agree) throw new AuthError("Please agree to the privacy notice to create your account.");
-        await signUp("patient" as AppKey, e, p, n);
+        await signUp("patient" as AppKey, e, p, n, wa);
       } else await signIn("patient" as AppKey, e, p);
       router.replace(next);
     } catch (err) {
@@ -51,14 +52,15 @@ function Inner({ mode }: { mode: "login" | "signup" }) {
         <div>
           <div>
             <h1 style={{ fontSize: 30 }}>{mode === "login" ? "Welcome back" : "Create your account"}</h1>
-            <p style={{ color: "var(--ink-2)", marginTop: 4 }}>{mode === "login" ? "Sign in to manage your appointments." : "It takes under a minute."}</p>
+            <p style={{ color: "var(--ink-2)", marginTop: 4 }}>{mode === "login" ? "Sign in to manage your appointments." : "Just your name, email and WhatsApp number. It takes under a minute."}</p>
           </div>
-          <form onSubmit={(e) => { e.preventDefault(); go(email, pw, mode === "signup" ? name : undefined); }} style={{ display: "flex", flexDirection: "column", gap: 16 }} noValidate>
+          <form onSubmit={(e) => { e.preventDefault(); go(email, pw, mode === "signup" ? name : undefined, mode === "signup" ? phone : undefined); }} style={{ display: "flex", flexDirection: "column", gap: 16 }} noValidate>
             {mode === "signup" && <Field label="Full name" htmlFor="name"><input id="name" className="a-input" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" /></Field>}
             <Field label="Email" htmlFor="email"><input id="email" type="email" className="a-input" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" inputMode="email" /></Field>
+            {mode === "signup" && <Field label="WhatsApp number" htmlFor="wa" hint="A mobile number that works on WhatsApp. Practices use it to confirm your booking."><input id="wa" type="tel" className="a-input" value={phone} onChange={(e) => setPhone(e.target.value)} autoComplete="tel" inputMode="tel" placeholder="082 431 9087" /></Field>}
             <Field label="Password" htmlFor="pw" hint={mode === "signup" ? "At least 8 characters." : undefined}><input id="pw" type="password" className="a-input" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete={mode === "login" ? "current-password" : "new-password"} /></Field>
             {mode === "signup" && (
-              <label className="a-check"><input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} /><span>I agree to the <Link href="/popia" target="_blank">privacy notice</Link>. BabyBlue shares my name and contact details only with practices I book with.</span></label>
+              <label className="a-check"><input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} /><span>I agree to the <Link href="/popia" target="_blank">privacy notice</Link>. BabyBlue shares my name, email and WhatsApp number only with practices I book with. We never ask for ID numbers or other sensitive details.</span></label>
             )}
             {error && <Notice tone="bad">{error}</Notice>}
             <Btn type="submit" className="primary lg block" loading={busy}>{mode === "login" ? "Sign in" : "Create account"}</Btn>

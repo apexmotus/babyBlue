@@ -62,3 +62,15 @@ It needs a new table, RLS and a notification channel. It is a schema decision, s
 
 **D-20 · 2026-10-28 · Released to production on the owner's explicit instruction; collaborator access for Katlego.**
 Flow used: `dev` → `staging` → `main` (branches created from `dev`; the remote had only `dev` and an archive branch), then `vercel deploy --prod` from `main`. D-14 still stands for future releases: production needs the owner's explicit say-so each time. The Vercel project is not linked to GitHub (deploys are manual), so a merge never deploys by itself. Katlego (`katlegomafane0-debug`) was invited with Write access so edits go through pull requests and reversals through `git revert` or GitHub's Revert button (see CONTRIBUTING.md). `main` has no branch protection (not available on this plan for a private repo), so nobody should force-push. The site stays `noindex` (D-12) and all practitioners are fictional.
+
+**D-21 · 2026-10-28 · The public signs up with a name, an email and a WhatsApp-compatible number, and nothing sensitive.**
+No ID or passport numbers, no date of birth. The number must be a mobile that works on WhatsApp (South African landlines are refused with a helpful message), is stored as +27… and is enforced by a database check (migration 0005), so it holds whatever client signs someone up. The public queue-join form lost its ID block for the same reason. Staff-side ID fields in the legacy Flow demo are untouched and flagged in COMPLIANCE.md.
+
+**D-22 · Practices are marked "via BabyBlue" wherever they see a booking.**
+A booking a patient makes (`appointments.source = 'app'`) shows a dark "via BabyBlue" chip in the practice's appointment list, calendar and details panel, a "Booked on BabyBlue" note naming when the patient chose the time, and a "New from BabyBlue" card on the dashboard. Bookings the practice adds itself, and walk-ins, are not marked. In-app only for now: email and WhatsApp notifications to practices need a provider (see ROADMAP).
+
+**D-23 · The practice directory is real, separate from the demo, and read-only.**
+Real practices (OpenStreetMap, ODbL) live in `src/data/practices/` and are rendered on the server (`/directory`, `/directory/p/{id}`, and a section on the listing pages). They are never mixed into the fictional bookable demo database: they have no diaries, no bookings, no reviews or ratings, no verified badge, and every card says "Not on BabyBlue yet". Not 3,000: this source gave 2,870 raw records, 1,434 usable once pharmacies, labs, mislabelled entries and entries with nothing a person could use were removed.
+
+**D-24 · Directory data goes live in batches of 100, each tested, deployed and checked before the next.**
+`scripts/directory/release-batch.sh` emits a batch, runs the data tests and typecheck, commits on `dev`, merges `dev` → `staging` → `main` (fast-forward only), deploys to production and checks the live site (the exact practice count at `/api/directory/stats`, the new practice's page, key pages). It stops at the first failure. Released batches are never edited.

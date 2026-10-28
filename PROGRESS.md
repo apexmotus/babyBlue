@@ -41,6 +41,20 @@ Inspired by how SMOMO's client side works (finder-first, browse-before-sign-in, 
 - Slot alerts ("no time that suits me?") are not built (D-19).
 - The practice OS keeps its previous look.
 
+## Phase 8 — Sign-up rules, "via BabyBlue", real practice directory (2026-10-28)
+
+- **Sign-up** (D-21): name, email, WhatsApp-compatible mobile number, password; no IDs. Phone rules in `src/lib/phone.ts` (30 cases), enforced in the database (migration 0005). Account page and queue-join form follow the same rule.
+- **"Via BabyBlue"** (D-22): chip, note and dashboard card in the practice OS; the patient's number is formatted and has a WhatsApp link.
+- **Practice directory** (D-23, D-24): `/directory` (search by name or place, type, province, city), `/directory/p/{id}`, a section on listing pages, a home band and a patient-app link. Source: OpenStreetMap via the Overpass API, one pass over all nine provinces: 2,870 raw records, **1,434 kept** after cleaning (774 pharmacies, labs and collection points removed, entries with no phone, website or street removed, 28 duplicates merged). Released as 15 batches (14 of 100, one of 34). Data tests gate every batch.
+- **Tests:** unit and database tests for all of the above; the data gate already caught pharmacies mis-filed as clinics.
+
+### Known limitations (this phase)
+- Not 3,000: OpenStreetMap does not hold more usable South African practices than this. A national health-facility list or licensed data would add more.
+- Private doctors, dentists and physios are thin (a few hundred) because mappers tag hospitals and public clinics far more than private rooms.
+- OpenStreetMap entries can be wrong; a few mix up two places. Pages say so and link to the source for fixes.
+- No monitored removal channel yet (COMPLIANCE.md): the contact form cannot store messages in production.
+- Reception screens in the legacy Flow demo still have optional ID fields.
+
 ## Phase 2–5 — Backend foundation (done and tested) / product UI (not started)
 
 Built and verified against a real Postgres engine (PGlite, PostgreSQL 18) — 49 passing tests:

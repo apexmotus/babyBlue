@@ -9,6 +9,7 @@ import { SpecialityTiles } from "@/components/front/SpecialityTiles";
 import { Btn, CtaBand, FeatureList, Head, PhotoSlot, Section } from "@/components/site/blocks";
 import { LaptopMock, MockCaption, PhoneMock } from "@/components/site/mocks";
 import { getCities, getFinderData, getListedSpecialities } from "@/lib/directory-facets";
+import { getDirectorySummary } from "@/lib/practices/data";
 
 export const metadata: Metadata = {
   title: { absolute: "BabyBlue — Care, connected. Better access to care. Stronger practices." },
@@ -20,6 +21,8 @@ export default function Home() {
   const finder = getFinderData();
   const cities = getCities();
   const specialities = getListedSpecialities();
+  const directory = getDirectorySummary();
+  const num = (x: number) => x.toLocaleString("en-ZA");
   return (
     <>
       {/* 1 · HERO: finder-first. Patients start here; practices are one link away. */}
@@ -231,6 +234,28 @@ export default function Home() {
           ))}
         </ul>
       </Section>
+
+      {/* PRACTICE DIRECTORY: real practices from OpenStreetMap, none of them on BabyBlue yet */}
+      {directory.practices > 0 && (
+        <Section tone="deep">
+          <div className="x-split">
+            <div className="x-stack" style={{ ["--gap" as string]: "18px" }}>
+              <span className="x-eyebrow">Practice directory</span>
+              <h2 className="x-h2">Real practices near you, even before they join BabyBlue.</h2>
+              <p className="x-lead">Browse hospitals, clinics, doctors, dentists and other practices across South Africa. The ones that join BabyBlue show real appointment times and take bookings, each marked as coming from BabyBlue.</p>
+              <div className="x-btn-row"><Btn href="/directory" variant="light" arrow>Browse the directory</Btn></div>
+            </div>
+            <div>
+              <div className="f-stats">
+                <div className="f-stat"><b>{num(directory.practices)}</b><span>practices</span></div>
+                <div className="f-stat"><b>{num(directory.provinces)}</b><span>provinces</span></div>
+                <div className="f-stat"><b>{num(directory.cities)}</b><span>cities and towns</span></div>
+              </div>
+              <p className="x-small" style={{ color: "rgba(255,255,255,.65)", marginTop: 14 }}>Details © OpenStreetMap contributors (ODbL), retrieved {directory.retrieved}. Not verified by BabyBlue, and not yet on BabyBlue.</p>
+            </div>
+          </div>
+        </Section>
+      )}
 
       {/* 6 · APP DEMO */}
       <Section tone="sky" id="app-demo">

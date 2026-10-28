@@ -36,5 +36,18 @@ export const APPT_STATUS: Record<string, { label: string; tone: "info" | "good" 
 };
 export const LIVE_STATUSES = ["booked", "confirmed", "checked_in", "in_progress"];
 
-export const SOURCE_LABEL: Record<string, string> = { app: "BabyBlue App", os: "Practice", flow: "Walk-in / QR" };
+export { SOURCE_LABEL, isBabyBlue } from "./sources";
+
+export interface BbBooking { id: string; created_at: Date; starts_at: Date; status: string; client: string; service: string; practitioner: string }
+
+/** Bookings patients made through BabyBlue in the last `days` days, newest first. */
+export const loadBabyBlueBookings = (uid: string, practiceId: string, days = 7, limit = 6) =>
+  query<BbBooking>(
+    uid,
+    `select a.id, a.created_at, a.starts_at, a.status::text, trim(c.first_name || ' ' || c.last_name) client, s.name service, p.display_name practitioner
+       from public.appointments a join public.clients c on c.id = a.client_id join public.services s on s.id = a.service_id join public.practitioners p on p.id = a.practitioner_id
+      where a.practice_id = $1 and a.source = 'app' and a.status <> 'cancelled' and a.created_at >= now() - make_interval(days => $2)
+      order by a.created_at desc limit $3`,
+    [practiceId, days, limit],
+  );
 export const ROLE_LABEL: Record<string, string> = { practice_owner: "Owner", practitioner: "Practitioner", receptionist: "Reception", staff: "Staff" };

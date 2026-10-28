@@ -6,7 +6,7 @@ import { getCities } from "@/lib/directory-facets";
 const COLS = [
   {
     title: "Find care",
-    links: SPECIALITY_PAGES.map((s) => [`/${s.slug}`, s.plural] as const),
+    links: [...SPECIALITY_PAGES.map((s) => [`/${s.slug}`, s.plural] as const), ["/directory", "Practice directory"] as const],
   },
   {
     title: "Platform",

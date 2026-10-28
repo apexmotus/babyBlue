@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { BadgeCheck, MapPin, Search, SearchX, SlidersHorizontal, X } from "lucide-react";
 import { Empty, Field, Sheet, Switch } from "@/components/app/primitives";
@@ -50,6 +51,7 @@ function SearchInner() {
     return r;
   }, [results.data, sort]);
 
+  const directoryHref = `/directory${q || city ? `?${new URLSearchParams({ ...(q ? { q } : {}), ...(city ? { city: city.toLowerCase().replace(/[^a-z0-9]+/g, "-") } : {}) }).toString()}` : ""}`;
   const active = [q && `“${q}”`, speciality, city, verified && "Verified only"].filter(Boolean) as string[];
   const clear = () => router.replace("/patient/search");
 
@@ -130,6 +132,7 @@ function SearchInner() {
             )}
           </div>
           <p className="a-hint" style={{ marginTop: 22, display: "flex", gap: 6, alignItems: "center" }}><MapPin size={14} /> Demo data: every practitioner shown here is fictional.</p>
+          <p className="a-hint" style={{ marginTop: 8 }}>Looking for a real practice that is not on BabyBlue yet? <Link className="a-link" href={directoryHref}>Search the practice directory</Link>. You call them to book.</p>
         </section>
       </div>
 

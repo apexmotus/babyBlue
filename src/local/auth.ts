@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { announceChange, system } from "./db";
+import { parseWhatsApp } from "@/lib/phone";
 import { hashPassword, newSalt, verifyPassword } from "./crypto";
 
 export type AppKey = "patient" | "practice";
@@ -53,16 +54,23 @@ export function useSession(app: AppKey) {
 
 export class AuthError extends Error {}
 
-export async function signUp(app: AppKey, email: string, password: string, name: string): Promise<Session> {
+/** Public sign-up asks for a name, an email and a WhatsApp-compatible mobile number, and nothing else (no ID numbers). */
+export async function signUp(app: AppKey, email: string, password: string, name: string, whatsapp?: string): Promise<Session> {
   const e = email.trim().toLowerCase();
   if (!/^\S+@\S+\.\S+$/.test(e)) throw new AuthError("Enter a valid email address.");
   if (password.length < 8) throw new AuthError("Use at least 8 characters for your password.");
   if (name.trim().length < 2) throw new AuthError("Please tell us your name.");
+  let phone: string | undefined;
+  if (app === "patient" || whatsapp?.trim()) {
+    const r = parseWhatsApp(whatsapp ?? "");
+    if (!r.ok) throw new AuthError(r.message);
+    phone = r.e164;
+  }
   const exists = await system("select 1 from auth.users where email = $1", [e]);
   if (exists.length) throw new AuthError("An account with this email already exists. Try signing in instead.");
   const salt = newSalt();
   const hash = await hashPassword(password, salt);
-  const [u] = await system<{ id: string }>("insert into auth.users (email, raw_user_meta_data) values ($1, $2::jsonb) returning id", [e, JSON.stringify({ display_name: name.trim() })]);
+  const [u] = await system<{ id: string }>("insert into auth.users (email, raw_user_meta_data) values ($1, $2::jsonb) returning id", [e, JSON.stringify({ display_name: name.trim(), ...(phone ? { phone } : {}) })]);
   await system("insert into auth.credentials (user_id, salt, hash) values ($1, $2, $3)", [u.id, salt, hash]);
   const s = { userId: u.id, email: e, name: name.trim() };
   writeSession(app, s);

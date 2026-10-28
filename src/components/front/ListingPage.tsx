@@ -1,8 +1,13 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { CtaBand, Faq, Section } from "@/components/site/blocks";
-import { listingHeading, listingPath, type CityPage, type SpecialityPage } from "@/lib/directory";
+import { DirectoryAttribution } from "@/components/directory/DirectoryAttribution";
+import { DirectoryCard } from "@/components/directory/DirectoryCard";
+import { listingHeading, listingPath, slugify, type CityPage, type SpecialityPage } from "@/lib/directory";
 import { citiesFor, getCities, getFinderData, getListedSpecialities, specialitiesIn } from "@/lib/directory-facets";
+import { PRACTICES } from "@/lib/practices/data";
+import { queryPractices } from "@/lib/practices/query";
+import { KIND_FOR_SPECIALITY } from "@/lib/practices/types";
 import { SITE } from "@/lib/site";
 import { Finder } from "./Finder";
 import { ListingResults } from "./ListingResults";
@@ -76,6 +81,11 @@ export function ListingPage({ spec, city }: { spec?: SpecialityPage; city?: City
   }
   const relatedLabels = spec && city ? ["Same speciality, other cities", "Other care in this city"] : spec ? ["Where to find them", "Other specialities"] : ["Specialities in this city", "Other cities"];
 
+  // Real practices from the directory (OpenStreetMap). They are not on BabyBlue, so they sit under the bookable results.
+  const dirKind = spec ? KIND_FOR_SPECIALITY[spec.slug] : undefined;
+  const dir = spec && !dirKind ? { total: 0, items: [] } : queryPractices(PRACTICES, { kind: dirKind, city: city ? slugify(city.name) : undefined, pageSize: 6 });
+  const dirHref = `/directory?${new URLSearchParams({ ...(dirKind ? { kind: dirKind } : {}), ...(city ? { city: slugify(city.name) } : {}) }).toString()}`;
+
   const emptyHref = spec ? listingPath(spec) : city ? listingPath(undefined, city) : "/patient/search";
   const emptyLabel = spec && city ? `All ${spec.plural.toLowerCase()}` : "Browse all care";
 
@@ -98,12 +108,28 @@ export function ListingPage({ spec, city }: { spec?: SpecialityPage; city?: City
           speciality={spec?.name}
           city={city?.name}
           noun={noun}
+          emptyBody={dir.total > 0 ? "None of them take BabyBlue bookings yet, so there are no times to show here. The real practices below are ones you can call." : undefined}
           empty={<Link className="x-btn x-btn-outline x-btn-sm" href={emptyHref}>{emptyLabel} <ArrowRight size={16} aria-hidden="true" /></Link>}
         />
         <p className="x-small" style={{ marginTop: 20 }}>
           Opening a practitioner shows their services and live times, and you only sign in when you book. BabyBlue is for booking appointments, not emergencies: in an emergency call 10177 (ambulance) or 112 from a mobile phone.
         </p>
       </Section>
+
+      {dir.total > 0 && (
+        <Section tone="white" className="f-tight">
+          <div className="f-row-head">
+            <div className="x-stack" style={{ ["--gap" as string]: "14px" }}>
+              <span className="f-kicker">Practice directory</span>
+              <h2 className="f-h2">{spec && city ? `${spec.plural} in ${city.name}` : city ? `Practices in ${city.name}` : spec ? `${spec.plural} across South Africa` : "Practices"}, <span className="acc">not on BabyBlue yet.</span></h2>
+            </div>
+            <p className="f-lead">Real practices from the directory. They have not joined BabyBlue, so call to book.</p>
+          </div>
+          <ul className="f-dgrid">{dir.items.map((p) => <li key={p.id}><DirectoryCard p={p} /></li>)}</ul>
+          <p style={{ marginTop: 18 }}><Link className="a-link" href={dirHref}>See all {dir.total.toLocaleString("en-ZA")} in the directory <ArrowRight size={14} aria-hidden="true" style={{ verticalAlign: "-2px" }} /></Link></p>
+          <DirectoryAttribution />
+        </Section>
+      )}
 
       {related.some((r) => r.length) && (
         <Section tone="white" className="f-tight">

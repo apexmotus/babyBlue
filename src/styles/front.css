@@ -167,3 +167,63 @@
   [data-rv], .f-tile, .f-tile .ico, .f-tile .go, .f-city, .f-city .go, .f-in { transition: none !important; animation: none !important; }
   [data-rv][data-reveal="pending"] { opacity: 1; transform: none; }
 }
+
+/* ───── practice directory: real practices from OpenStreetMap; none of them are on BabyBlue ───── */
+.f-h3 { font-family: var(--font-head); font-weight: 800; font-size: 1.25rem; letter-spacing: -0.03em; color: var(--deep); }
+.f-field input { width: 100%; padding: 2px 0; border: 0; background: transparent; font-family: var(--font-head); font-weight: 700; font-size: 1.05rem; line-height: 1.3; letter-spacing: -0.01em; color: var(--deep); text-overflow: ellipsis; }
+.f-field input::placeholder { color: var(--ink-3); font-weight: 600; }
+.f-field input:focus { outline: none; }
+.f-dirsearch { max-width: 1080px; grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr)) auto; }
+.f-dirsearch .f-field { background: #f4f8f7; }
+.f-dirsearch .f-field:hover, .f-dirsearch .f-field:focus-within { background: var(--cloud); }
+.f-dirsearch .f-field + .f-field::before { display: none; }
+.f-dirsearch .f-field.wide { padding-right: 20px; }
+.f-dgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 16px; list-style: none; margin: 0; padding: 0; }
+.f-dgrid > li { display: flex; min-width: 0; }
+.f-dcard { flex: 1; display: flex; flex-direction: column; gap: 12px; min-width: 0; padding: 22px; background: #fff; border: 1px solid var(--border); border-radius: 26px; box-shadow: var(--shadow); transition: transform 0.22s var(--ease), box-shadow 0.22s; }
+.f-dcard:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+.f-dtop { display: flex; gap: 14px; align-items: flex-start; }
+.f-dtop h3 { font-family: var(--font-head); font-weight: 800; font-size: 1.1rem; line-height: 1.2; letter-spacing: -0.025em; color: var(--deep); overflow-wrap: anywhere; }
+.f-dtop h3 a { color: inherit; }
+.f-dtop h3 a:hover { text-decoration: underline; }
+.f-kind { width: 48px; height: 48px; border-radius: 18px; display: grid; place-items: center; flex: none; background: var(--sky); color: var(--deep); }
+.f-kind[data-kind="hospital"], .f-kind[data-kind="clinic"] { background: var(--deep); color: #fff; }
+.f-kind[data-kind="doctor"], .f-kind[data-kind="dietitian"] { background: var(--tone-sage); }
+.f-kind[data-kind="psychologist"], .f-kind[data-kind="optometrist"] { background: var(--tone-mist); }
+.f-kind[data-kind="physiotherapist"], .f-kind[data-kind="chiropractor"], .f-kind[data-kind="other"] { background: var(--tone-sand); }
+.f-dmeta { color: var(--ink-3); font-size: 13.5px; margin-top: 2px; }
+.f-daddr { display: flex; gap: 8px; color: var(--ink-2); font-size: 14px; line-height: 1.45; }
+.f-daddr svg { flex: none; margin-top: 2px; color: var(--link); }
+.f-dactions { display: flex; flex-wrap: wrap; gap: 8px; }
+.f-dact { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1.5px solid #c9d8d3; background: #fff; color: var(--deep); font-weight: 600; font-size: 14px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.f-dact:hover { border-color: var(--deep); color: var(--deep); }
+.f-dnote { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--border); font-size: 13px; font-weight: 600; color: var(--ink-3); }
+.f-nobb { display: inline-flex; padding: 6px 14px; border-radius: 999px; background: #fff7e0; border: 1px solid #f2d98c; color: #7a5200; font-size: 13.5px; font-weight: 700; }
+.f-attrib { margin-top: 36px; font-size: 12.5px; line-height: 1.6; color: var(--ink-3); max-width: 80ch; }
+.f-attrib a { text-decoration: underline; }
+.f-pager { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 28px; font-size: 14px; color: var(--ink-2); }
+.f-pager a { display: inline-flex; gap: 6px; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 999px; border: 1.5px solid #c9d8d3; background: #fff; font-weight: 700; color: var(--deep); }
+.f-pager a:hover { border-color: var(--deep); }
+.f-active { margin-bottom: 18px; }
+.f-chip small { opacity: 0.6; font-family: var(--font-inter), Inter, system-ui, sans-serif; font-weight: 600; font-size: 12.5px; }
+.f-profile { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.f-pcard h2 { margin-bottom: 14px; }
+.f-facts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.f-facts li { display: flex; gap: 12px; align-items: flex-start; line-height: 1.5; }
+.f-facts svg { flex: none; margin-top: 3px; color: var(--link); }
+.f-facts small { color: var(--ink-3); }
+/* home page band */
+.f-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 28px; }
+.f-stat { padding: 20px 22px; border-radius: var(--r-tile); background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.16); }
+.f-stat b { display: block; font-family: var(--font-head); font-weight: 800; font-size: clamp(1.8rem, 3.4vw, 2.8rem); letter-spacing: -0.04em; line-height: 1; color: #fff; }
+.f-stat span { display: block; margin-top: 6px; font-size: 14px; color: rgba(255, 255, 255, 0.75); }
+@media (max-width: 1080px) {
+  .f-dirsearch { grid-template-columns: 1fr 1fr; }
+  .f-dirsearch .f-field.wide, .f-dirsearch .f-go { grid-column: 1 / -1; }
+  .f-profile { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  .f-dirsearch { grid-template-columns: 1fr; }
+  .f-stats { grid-template-columns: 1fr; }
+  .f-pager { flex-wrap: wrap; justify-content: center; }
+}

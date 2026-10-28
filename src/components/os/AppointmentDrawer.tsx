@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Ban, CalendarClock, CircleCheck, DoorOpen, Mail, Phone, Play, RotateCcw, UserX } from "lucide-react";
+import { Ban, CalendarClock, CircleCheck, DoorOpen, Mail, MessageCircle, Phone, Play, RotateCcw, UserX } from "lucide-react";
+import { formatPhone, parsePhone, whatsappLink } from "@/lib/phone";
 import { Avatar, Badge, Btn, Drawer, Field, Notice } from "@/components/app/primitives";
 import { useOs } from "@/components/os/OsContext";
 import { useToast } from "@/components/ui";
 import { atTime, dayKey, fmtLongDate, fmtTime, money, relativeDay, todayKey } from "@/lib/format";
-import { APPT_STATUS, SOURCE_LABEL, type Ev } from "@/lib/os-data";
+import { BabyBlueTag } from "@/components/os/BabyBlueTag";
+import { APPT_STATUS, SOURCE_LABEL, isBabyBlue, type Ev } from "@/lib/os-data";
 import { friendlyError, mutate, query } from "@/local/db";
 import { useQuery } from "@/local/hooks";
 
@@ -85,8 +87,9 @@ export function AppointmentDrawer() {
         <>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <Badge tone={st!.tone} dot>{st!.label}</Badge>
-            <span style={{ color: "var(--ink-3)", fontSize: 13 }}>{SOURCE_LABEL[e.source] ?? e.source} · booked {relativeDay(e.created_at)}</span>
+            <span style={{ color: "var(--ink-3)", fontSize: 13 }}>{isBabyBlue(e.source) ? <BabyBlueTag source={e.source} /> : SOURCE_LABEL[e.source] ?? e.source} · booked {relativeDay(e.created_at)}</span>
           </div>
+          {isBabyBlue(e.source) && <div className="os-bb-note"><b>Booked on BabyBlue.</b> {e.client.split(" ")[0]} chose this time themselves in the BabyBlue app, {relativeDay(e.created_at)} at {fmtTime(e.created_at)}.</div>}
 
           {mode === "cancel" && (
             <div className="a-card pad flat" style={{ display: "flex", flexDirection: "column", gap: 14, background: "var(--bad-bg)", border: 0 }}>
@@ -124,7 +127,15 @@ export function AppointmentDrawer() {
               <Avatar name={e.client} size={44} />
               <div style={{ flex: 1, minWidth: 0 }}><b style={{ color: "var(--deep)" }}>{e.client}</b><br /><Link href={`/practice/clients/${e.client_id}`} className="a-link" style={{ fontSize: 13.5 }} onClick={closeAppointment}>Open client record</Link></div>
             </div>
-            {e.phone && <p style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 14 }}><Phone size={15} color="#5a7282" /> <a href={`tel:${e.phone.replace(/\s/g, "")}`}>{e.phone}</a></p>}
+            {e.phone && (() => {
+              const ph = parsePhone(e.phone);
+              return (
+                <p style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", fontSize: 14 }}>
+                  <Phone size={15} color="#5a7282" /> <a href={`tel:${e.phone.replace(/\s/g, "")}`}>{ph.ok ? formatPhone(ph.e164) : e.phone}</a>
+                  {ph.ok && ph.mobile && <a className="a-badge good" href={whatsappLink(ph.e164)} target="_blank" rel="noopener noreferrer"><MessageCircle size={13} /> WhatsApp</a>}
+                </p>
+              );
+            })()}
             {e.email && <p style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 14 }}><Mail size={15} color="#5a7282" /> <a href={`mailto:${e.email}`}>{e.email}</a></p>}
           </section>
 

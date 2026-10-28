@@ -154,3 +154,15 @@
 .cal-ev.done { opacity: .78; }
 .os-top { backdrop-filter: none; background: rgba(245,248,246,.97); }
 .os-kpis { grid-template-columns: repeat(auto-fit, minmax(158px, 1fr)); }
+
+/* bookings that came from BabyBlue are always marked */
+.os-bb { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 8px; border-radius: 999px; background: var(--deep); color: #fff; font-size: 12px; font-weight: 700; line-height: 1.3; white-space: nowrap; }
+.os-bb i { width: 8px; height: 8px; border-radius: 50%; background: var(--sky); flex: none; }
+.os-bb small { font-weight: 500; opacity: .8; margin-left: 2px; }
+.os-bb-note { padding: 12px 14px; border-radius: 14px; background: var(--info-bg); color: #164f61; font-size: 14px; line-height: 1.45; }
+.cal-bb { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--deep); margin-left: 6px; vertical-align: 1px; }
+.os-bbrow { display: flex; flex-direction: column; gap: 3px; width: 100%; text-align: left; padding: 11px 0; border: 0; border-top: 1px solid var(--line-2); background: none; cursor: pointer; font: inherit; color: var(--ink); }
+.os-bbrow:first-of-type { border-top: 0; }
+.os-bbrow:hover b { text-decoration: underline; }
+.os-bbrow > span { color: var(--ink-2); font-size: 13.5px; }
+.os-bbrow .os-bb { color: #fff; font-size: 12px; }

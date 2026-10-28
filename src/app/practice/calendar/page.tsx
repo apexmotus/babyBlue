@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { PRAC_COLORS, useOs } from "@/components/os/OsContext";
 import { useToast } from "@/components/ui";
 import { addDaysKey, atTime, dayKey, dayStart, fmtDayMonth, fmtMonthYear, fmtTime, fmtWeekday, hhmm, minutesOfDay, startOfWeekKey, todayKey, weekdayIndex } from "@/lib/format";
-import { loadEvents, loadPractitioners, type Ev } from "@/lib/os-data";
+import { loadEvents, loadPractitioners, type Ev, isBabyBlue } from "@/lib/os-data";
 import { friendlyError, mutate, query } from "@/local/db";
 import { useNow, useQuery } from "@/local/hooks";
 
@@ -209,8 +209,8 @@ export default function CalendarPage() {
                             style={{ top, height: h, left: `calc(${(li.col / li.n) * 100}% + 2px)`, width: `calc(${100 / li.n}% - 4px)`, background: c.bg, color: c.ink, borderColor: c.solid + "55", borderLeftColor: c.solid, transform: isDrag ? `translate(${tx}px, ${ty}px)` : undefined }}
                             onPointerDown={(p) => { if (p.button === 0) { p.stopPropagation(); beginDrag(e, p.clientX, p.clientY); } }}
                             onKeyDown={(k) => k.key === "Enter" && os.openAppointment(e.id)}
-                            aria-label={`${fmtTime(e.starts_at)} ${e.client}, ${e.service}, ${e.practitioner}`}>
-                            <b>{e.client}</b>
+                            aria-label={`${fmtTime(e.starts_at)} ${e.client}, ${e.service}, ${e.practitioner}${isBabyBlue(e.source) ? ", booked via BabyBlue" : ""}`}>
+                            <b>{e.client}{isBabyBlue(e.source) && <i className="cal-bb" title="Booked via BabyBlue" aria-hidden="true" />}</b>
                             {h > 34 && <span>{fmtTime(e.starts_at)} · {e.service}</span>}
                             {h > 58 && shownPracs.length > 1 && <span>{e.practitioner.replace(/^Dr\s+/, "")}</span>}
                             {isDrag && drag!.moved && <span style={{ fontWeight: 700 }}>→ {fmtTime(atTime(addDaysKey(k, view === "week" ? Math.round(drag!.dx / colW) : 0), hhmm(minutesOfDay(e.starts_at) + Math.round(drag!.dy / (HH / 60) / SNAP) * SNAP)))}</span>}

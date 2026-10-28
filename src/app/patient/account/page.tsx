@@ -7,6 +7,7 @@ import { Avatar, Btn, Field, Notice, Sheet } from "@/components/app/primitives";
 import { RequireAuth } from "@/components/patient/RequireAuth";
 import { useToast } from "@/components/ui";
 import { downloadText } from "@/lib/format";
+import { parseWhatsApp } from "@/lib/phone";
 import { friendlyError, mutate, query, resetLocalDb } from "@/local/db";
 import { useSession } from "@/local/auth";
 import { useQuery } from "@/local/hooks";
@@ -39,9 +40,12 @@ function Account() {
 
   async function save() {
     if (name.trim().length < 2) return toast("Please enter your name");
+    const wa = parseWhatsApp(phone);
+    if (!wa.ok) return toast(wa.message);
     setBusy(true);
     try {
-      await mutate(uid, "update public.profiles set display_name = $2, phone = nullif($3, '') where id = $1", [uid, name.trim(), phone.trim()]);
+      await mutate(uid, "update public.profiles set display_name = $2, phone = $3 where id = $1", [uid, name.trim(), wa.e164]);
+      setPhone(wa.e164);
       const s = JSON.parse(localStorage.getItem("bb_session_patient") ?? "{}");
       localStorage.setItem("bb_session_patient", JSON.stringify({ ...s, name: name.trim() }));
       window.dispatchEvent(new Event("bb-session-change"));
@@ -75,7 +79,7 @@ function Account() {
           <div><h2 style={{ fontSize: 19 }}>{session!.name}</h2><p style={{ color: "var(--ink-2)", fontSize: 14 }}>{session!.email}</p></div>
         </div>
         <Field label="Full name" htmlFor="n"><input id="n" className="a-input" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" /></Field>
-        <Field label="Mobile number" htmlFor="p" hint="Shared with a practice only when you book with them."><input id="p" className="a-input" value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" autoComplete="tel" placeholder="082 000 0000" /></Field>
+        <Field label="WhatsApp number" htmlFor="p" hint="A mobile number that works on WhatsApp. Shared with a practice only when you book with them."><input id="p" className="a-input" value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" autoComplete="tel" placeholder="082 000 0000" /></Field>
         <div><Btn className="primary" disabled={!dirty} loading={busy} onClick={save}>Save changes</Btn></div>
       </section>
 

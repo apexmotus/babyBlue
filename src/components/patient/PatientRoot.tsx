@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { CalendarDays, ChevronDown, LogOut, Search, UserRound } from "lucide-react";
+import { CalendarDays, ChevronDown, LogOut, MapPinned, Search, UserRound } from "lucide-react";
 import { DbGate } from "@/components/app/DbGate";
 import { Avatar } from "@/components/app/primitives";
 import { Logo } from "@/components/ui";
@@ -13,6 +13,7 @@ import { resetLocalDb } from "@/local/db";
 const TABS = [
   { href: "/patient", label: "Discover", icon: Search, match: (p: string) => p === "/patient" || p.startsWith("/patient/search") || p.startsWith("/patient/p/") || p.startsWith("/patient/book") },
   { href: "/patient/appointments", label: "Appointments", icon: CalendarDays, match: (p: string) => p.startsWith("/patient/appointments") },
+  { href: "/directory", label: "Directory", icon: MapPinned, match: () => false },
   { href: "/patient/account", label: "Account", icon: UserRound, match: (p: string) => p.startsWith("/patient/account") },
 ] as const;
 
@@ -72,7 +73,7 @@ function Header({ bare }: { bare: boolean }) {
         <Logo href="/patient" size={32} />
         {!bare && (
           <nav className="pt-nav" aria-label="Main">
-            {TABS.slice(0, 2).map((t) => (
+            {TABS.slice(0, 3).map((t) => (
               <Link key={t.href} href={t.href} aria-current={t.match(path) ? "page" : undefined}>{t.label}</Link>
             ))}
           </nav>

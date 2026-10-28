@@ -17,7 +17,7 @@ const SORTS: [Sort, string][] = [["soonest", "Soonest"], ["price", "Lowest fee"]
  * fictional demo data), so this renders after the database starts; the page shell around it is static HTML. With a live
  * Supabase project this is the one component that would read from the server instead.
  */
-export function ListingResults({ speciality, city, noun, empty }: { speciality?: string; city?: string; noun: string; empty: ReactNode }) {
+export function ListingResults({ speciality, city, noun, empty, emptyBody }: { speciality?: string; city?: string; noun: string; empty: ReactNode; emptyBody?: string }) {
   const [sort, setSort] = useState<Sort>("soonest");
   const results = useQuery(() => searchPractitioners(null, { speciality, city, limit: 100 }), [speciality, city]);
 
@@ -47,8 +47,8 @@ export function ListingResults({ speciality, city, noun, empty }: { speciality?:
         </div>
       ) : rows.length === 0 ? (
         <div className="f-empty">
-          <Empty icon={<SearchX size={28} />} title={`No ${noun} listed yet`} action={empty}>
-            Nobody matching this page has opened a diary on BabyBlue yet. We only list practitioners who have real, bookable times.
+          <Empty icon={<SearchX size={28} />} title={`No ${noun} on BabyBlue yet`} action={empty}>
+            {emptyBody ?? "Nobody matching this page has opened a diary on BabyBlue yet. We only list practitioners who have real, bookable times."}
           </Empty>
         </div>
       ) : (

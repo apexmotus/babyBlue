@@ -19,6 +19,14 @@
 - **Photography** into the hero stage and speciality tiles (add an image layer; layout is ready).
 - Extend the hybrid layer to the practice OS and marketing sub-pages when the brand is formalised.
 
+## Directory and sign-up follow-ups
+- **Removal channel:** publish a monitored address (NEXT_PUBLIC_CONTACT_EMAIL) and connect storage so the contact form works. Required before the site is allowed into search engines.
+- **More sources** for the directory: the national health-facility list (once its licence and a download are confirmed), private hospital groups by permission, council registers only on written terms.
+- **Claim a listing:** a practice proves it is theirs, then its card turns into a bookable BabyBlue profile.
+- **Notify practices** of new BabyBlue bookings by email or WhatsApp (needs a provider), using the same "via BabyBlue" wording.
+- **Staff-side ID fields** in the Flow demo: remove or keep behind a clear need.
+- Reviews stay out until a verified-visit policy has had legal review.
+
 ## Later
 - Payments (PayFast/Peach/Stripe where available), invoices, revenue reporting.
 - Reviews with verified-visit gating and moderation policy (only after legal review).

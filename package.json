@@ -10,7 +10,7 @@
     "test:db": "vitest run tests/db",
     "typecheck": "tsc --noEmit",
     "gen:sql": "node scripts/gen-sql.mjs",
-    "predev": "node scripts/gen-sql.mjs",
+    "predev": "node scripts/gen-sql.mjs && node scripts/build-snapshot.ts",
     "prebuild": "node scripts/gen-sql.mjs && node scripts/build-snapshot.ts",
     "snapshot": "node scripts/build-snapshot.ts"
   },

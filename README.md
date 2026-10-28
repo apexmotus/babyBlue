@@ -20,6 +20,9 @@ Contact-form submissions are written to `.data/leads.jsonl` in development. In p
 - Marketing site: `src/app/(site)/*` · Flow demo (fictional data): `/c/rosebank-family`, `/staff/login`
 - Docs: BRAND · PRODUCT · ARCHITECTURE · DESIGN_SYSTEM · COMPLIANCE · ROADMAP · PROGRESS · DECISIONS
 
+## Practice directory data
+Real practices from OpenStreetMap, released in batches of 100 (`src/data/practices/`). How it is fetched, cleaned, tested and released: `data/directory/README.md`. `npm run dev` rebuilds the browser database snapshot first, so schema changes are always picked up.
+
 ## Deploy (Vercel)
 ```bash
 vercel deploy --scope jameel-the-designers-projects      # preview (default)

@@ -19,6 +19,9 @@ The hybrid of BabyBlue's calm, trust-first system and SMOMO's finder-first, tile
 | Header | Transparent over the hero (`--nav-h` is pulled under it), glass and hairline once scrolled; mobile menu traps focus |
 | Cards | Practitioner cards use 26px radius and squircle avatars to echo the tiles |
 
+## Practice directory components (`src/components/directory/`)
+`DirectoryCard` (kind tile, address, call and website pills, "Not on BabyBlue yet"), `DirectorySearch` (a plain GET form that works without JavaScript), `Pager`, `DirectoryAttribution` (required wherever the data shows). The amber "Not on BabyBlue yet" chip is the only warm accent: it must never be dressed up as a booking button or a verified badge.
+
 ## Marketing components (`src/components/site/`)
 | Component | Notes |
 |---|---|

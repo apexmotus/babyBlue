@@ -6,7 +6,7 @@ import { useState } from "react";
 import { ArrowLeft, ShieldCheck, Sparkles } from "lucide-react";
 import { Banner, Field, Logo, Modal } from "@/components/ui";
 import { clearDevice, isOpenNow, joinQueue, useDB } from "@/lib/store";
-import { checkRsaId, makeDemoId, validPhone } from "@/lib/util";
+import { formatPhone, parseWhatsApp } from "@/lib/phone";
 
 export default function Join() {
   const { slug } = useParams<{ slug: string }>();
@@ -17,9 +17,6 @@ export default function Join() {
   const [first, setFirst] = useState("");
   const [last, setLast] = useState("");
   const [phone, setPhone] = useState("");
-  const [wa, setWa] = useState(true);
-  const [idType, setIdType] = useState("RSA ID");
-  const [idNo, setIdNo] = useState("");
   const [consent, setConsent] = useState(false);
   const [tried, setTried] = useState(false);
   const [popia, setPopia] = useState(false);
@@ -31,21 +28,17 @@ export default function Join() {
       setFirst(dev.first);
       setLast(dev.last);
       setPhone(dev.phone);
-      setWa(dev.whatsapp);
-      setIdType(dev.idType);
-      setIdNo(dev.idNumber);
       setRecognised(true);
     } else {
       setRecognised(false);
     }
   }
 
-  const idCheck = idType === "RSA ID" && idNo.trim() ? checkRsaId(idNo) : null;
+  const whatsapp = parseWhatsApp(phone);
   const errors = {
     first: !first.trim() && "Enter your first name",
     last: !last.trim() && "Enter your last name",
-    phone: !validPhone(phone) && "Enter a South African mobile number, e.g. 082 431 9087",
-    id: idCheck && !idCheck.ok && (idCheck.msg ?? "Check this number"),
+    phone: !whatsapp.ok && whatsapp.message,
   };
   const open = isOpenNow(db);
 
@@ -61,15 +54,13 @@ export default function Join() {
   function submit(e: React.FormEvent) {
     e.preventDefault();
     setTried(true);
-    if (errors.first || errors.last || errors.phone || errors.id || !open) return;
+    if (errors.first || errors.last || errors.phone || !whatsapp.ok || !open) return;
     const id = joinQueue({
       first: first.trim(),
       last: last.trim(),
-      phone: phone.trim(),
-      whatsapp: wa,
-      idType,
-      idNumber: idNo.trim() || undefined,
-      dob: idCheck?.dob,
+      phone: formatPhone(whatsapp.e164),
+      whatsapp: true,
+      idType: "Not collected", // BabyBlue does not ask the public for ID numbers
       consent,
       remember: true,
       source: "qr",
@@ -88,7 +79,7 @@ export default function Join() {
             style={{ color: "var(--primary)", fontWeight: 600 }}
             onClick={() => {
               clearDevice();
-              setFirst(""); setLast(""); setPhone(""); setIdNo(""); setConsent(false);
+              setFirst(""); setLast(""); setPhone(""); setConsent(false);
               setRecognised(false);
             }}
           >
@@ -101,7 +92,7 @@ export default function Join() {
           className="btn-link"
           style={{ color: "var(--primary)", alignSelf: "flex-start", fontSize: 13 }}
           onClick={() => {
-            setFirst("Thabo"); setLast("Mokone"); setPhone("082 555 0142"); setWa(true); setIdType("RSA ID"); setIdNo(makeDemoId()); setConsent(true);
+            setFirst("Thabo"); setLast("Mokone"); setPhone("082 555 0142"); setConsent(true);
           }}
         >
           Fill with demo details
@@ -115,27 +106,8 @@ export default function Join() {
         <Field label="Last name" error={tried && errors.last}>
           <input className={`input ${tried && errors.last ? "bad" : ""}`} value={last} onChange={(e) => setLast(e.target.value)} autoComplete="family-name" />
         </Field>
-        <Field label="Phone number" error={tried && errors.phone}>
+        <Field label="WhatsApp number" hint="A mobile number that works on WhatsApp. We never ask for ID numbers." error={tried && errors.phone}>
           <input className={`input ${tried && errors.phone ? "bad" : ""}`} value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" autoComplete="tel" placeholder="082 000 0000" />
-        </Field>
-        <label className="check">
-          <input type="checkbox" checked={wa} onChange={(e) => setWa(e.target.checked)} />
-          This is my WhatsApp number
-        </label>
-        <hr className="divider" />
-        <p className="b6">Identification <span className="muted" style={{ fontWeight: 400 }}>— optional for a walk-in</span></p>
-        <Field label="ID type">
-          <select className="select" value={idType} onChange={(e) => setIdType(e.target.value)}>
-            {["RSA ID", "Passport", "Asylum / refugee permit", "Other"].map((x) => <option key={x}>{x}</option>)}
-          </select>
-        </Field>
-        <Field
-          label="ID number"
-          error={errors.id}
-          ok={idCheck?.ok && "Valid ID number"}
-          hint={idType === "RSA ID" ? "13 digits" : undefined}
-        >
-          <input className={`input ${errors.id ? "bad" : ""}`} value={idNo} onChange={(e) => setIdNo(e.target.value)} inputMode={idType === "RSA ID" ? "numeric" : "text"} maxLength={idType === "RSA ID" ? 13 : 20} />
         </Field>
         <label className="check">
           <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />

@@ -5,7 +5,8 @@ import { CalendarSearch, Plus, Search } from "lucide-react";
 import { Badge, Btn, Empty } from "@/components/app/primitives";
 import { PRAC_COLORS, useOs } from "@/components/os/OsContext";
 import { addDaysKey, dayStart, fmtDayMonth, fmtTime, fmtWeekday, money, relativeDay, todayKey } from "@/lib/format";
-import { APPT_STATUS, SOURCE_LABEL, loadEvents, loadPractitioners } from "@/lib/os-data";
+import { BabyBlueTag } from "@/components/os/BabyBlueTag";
+import { APPT_STATUS, SOURCE_LABEL, isBabyBlue, loadEvents, loadPractitioners } from "@/lib/os-data";
 import { useQuery } from "@/local/hooks";
 
 type Range = "today" | "upcoming" | "past" | "all";
@@ -73,7 +74,7 @@ export default function AppointmentsPage() {
                     <td>{e.service}</td>
                     <td><span style={{ display: "inline-flex", gap: 7, alignItems: "center" }}><i className="os-prac-dot" style={{ background: c.solid }} />{e.practitioner}</span></td>
                     <td><Badge tone={st.tone} dot>{st.label}</Badge></td>
-                    <td style={{ color: "var(--ink-2)", fontSize: 13 }}>{SOURCE_LABEL[e.source] ?? e.source}</td>
+                    <td style={{ color: "var(--ink-2)", fontSize: 13 }}>{isBabyBlue(e.source) ? <BabyBlueTag source={e.source} /> : (SOURCE_LABEL[e.source] ?? e.source)}</td>
                     <td className="tnum" style={{ textAlign: "right" }}>{money(e.price_cents)}</td>
                   </tr>
                 );

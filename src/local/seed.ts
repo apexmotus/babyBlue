@@ -1,4 +1,5 @@
 import type { PGlite } from "@electric-sql/pglite";
+import { toE164 } from "../lib/phone.ts";
 import { hashPassword, newSalt } from "./crypto.ts";
 
 /**
@@ -24,7 +25,7 @@ const FIRST = ["Thabo", "Lerato", "Sipho", "Nomsa", "Ayesha", "Pieter", "Zanele"
 const LAST = ["Dlamini", "Nkosi", "Khumalo", "Mokoena", "Naidoo", "Pretorius", "Botha", "Jacobs", "Mahlangu", "Sithole", "Molefe", "Patel", "van Wyk", "Zulu", "Ndlovu", "Venter", "Cele", "Radebe", "Moyo", "Adams", "Hendricks", "Ncube", "Maseko", "Smit", "du Toit", "Govender", "Mthembu", "Sebola", "Louw", "Tshabalala"];
 
 interface DemoUser { key: string; email: string; name: string; phone?: string; id: string }
-const mkUser = (key: string, name: string, phone?: string): DemoUser => ({ key, email: `${key}@demo.babyblue`, name, phone, id: uuid() });
+const mkUser = (key: string, name: string, phone?: string): DemoUser => ({ key, email: `${key}@demo.babyblue`, name, phone: phone ? toE164(phone) : undefined, id: uuid() });
 
 const patients = [mkUser("lerato.ndlovu", "Lerato Ndlovu", "082 555 0142"), mkUser("mark.jacobs", "Mark Jacobs", "083 555 0187")];
 const staffBusi = mkUser("busi", "Busi Radebe", "084 555 0111");

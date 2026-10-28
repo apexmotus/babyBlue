@@ -43,6 +43,10 @@ Principle: **the database is the security boundary.** Clients use the user's JWT
 
 `/{speciality}` (e.g. `/physiotherapy`), `/{speciality}/{city}` and `/in/{city}` are statically generated from `directory-facets.ts` with `dynamicParams = false`. The static shell carries the heading, copy, breadcrumbs (JSON-LD), related links and FAQ. Practitioners are filled in client-side by `ListingResults` from the local database (`search_practitioners`, anonymous role), because that database only exists in the browser today. Pairs with nobody listed resolve to an honest empty state, are `noindex` and stay out of the sitemap. The whole site remains `noindex` until `ALLOW_INDEXING=true`.
 
+## Practice directory (real, read-only, not on BabyBlue)
+
+`/directory` and `/directory/p/{id}` are rendered on the server from `src/data/practices/batch-NNN.json` (listed in `index.ts`), loaded by `src/lib/practices/data.ts` and queried by pure functions in `query.ts`. This data is separate from the browser demo database: no diaries, bookings, reviews or verified badges. Listing pages add a "Practice directory" section for the same speciality and city. `GET /api/directory/stats` returns counts only and is what the release script checks in production.
+
 ## Roles and access
 
 | Role | Can |

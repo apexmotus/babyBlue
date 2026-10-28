@@ -3,7 +3,7 @@
 import { PGliteWorker } from "@electric-sql/pglite/worker";
 
 /** Bump to rebuild the local database (users lose local demo data) after a schema change. */
-export const LOCAL_DB_VERSION = 6;
+export const LOCAL_DB_VERSION = 7;
 const DATA_DIR = `idb://babyblue-local-v${LOCAL_DB_VERSION}`;
 
 let dbPromise: Promise<PGliteWorker> | null = null;
@@ -108,6 +108,7 @@ const MESSAGES: Record<string, string> = {
   not_authenticated: "Please sign in to continue.",
   forbidden: "You don't have permission to do that.",
   not_found: "That record could not be found.",
+  profiles_phone_international: "Enter your WhatsApp number in international format, for example +27 82 431 9087.",
 };
 export function friendlyError(e: unknown): string {
   const msg = e instanceof Error ? e.message : String(e);

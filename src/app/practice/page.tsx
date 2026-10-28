@@ -5,10 +5,11 @@ import { useMemo } from "react";
 import { ArrowRight, CalendarCheck, CalendarDays, Check, CircleCheck, Clock, DoorOpen, Plus, Play, Percent, UserPlus, Wallet, Gauge } from "lucide-react";
 import { Badge, Btn, Empty } from "@/components/app/primitives";
 import { StackedBars, Sparkline, HBars } from "@/components/os/charts";
+import { BabyBlueTag } from "@/components/os/BabyBlueTag";
 import { PRAC_COLORS, useOs } from "@/components/os/OsContext";
 import { useToast } from "@/components/ui";
-import { addDaysKey, dayStart, fmtLongDate, fmtTime, money, todayKey } from "@/lib/format";
-import { APPT_STATUS, loadEvents, loadPractitioners } from "@/lib/os-data";
+import { addDaysKey, dayStart, fmtLongDate, fmtTime, money, relativeDay, todayKey } from "@/lib/format";
+import { APPT_STATUS, loadBabyBlueBookings, loadEvents, loadPractitioners } from "@/lib/os-data";
 import { friendlyError, mutate, query } from "@/local/db";
 import { useQuery } from "@/local/hooks";
 
@@ -26,6 +27,7 @@ export default function Dashboard() {
   const today = todayKey();
   const agenda = useQuery(() => loadEvents(os.uid, pid, dayStart(today), dayStart(addDaysKey(today, 1))), [pid, today, os.uid], { enabled: !!pid, poll: 15000 });
   const pracs = useQuery(() => loadPractitioners(os.uid, pid), [pid, os.uid], { enabled: !!pid });
+  const bb = useQuery(() => loadBabyBlueBookings(os.uid, pid), [pid, os.uid], { enabled: !!pid, poll: 15000 });
   const queue = useQuery(() => query<{ id: string; display_name: string; urgency: string; joined_at: Date; status: string }>(os.uid, "select id, display_name, urgency, joined_at, status::text from public.queue_entries where practice_id = $1 and status in ('waiting','in_consultation') order by status desc, seq limit 5", [pid]), [pid, os.uid], { enabled: !!pid, poll: 6000 });
   const setup = useQuery(async () => {
     const [r] = await query<{ pracs: number; listed: number; verified: number; svcs: number; rules: number }>(os.uid,
@@ -118,6 +120,21 @@ export default function Dashboard() {
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 18, minWidth: 0 }}>
+          <section className="a-card">
+            <div className="os-card-h"><h2>New from BabyBlue</h2><span className="a-hint">last 7 days</span></div>
+            <div style={{ padding: "6px 20px 16px" }}>
+              {bb.loading && !bb.data && <div className="a-skel" style={{ height: 70, marginTop: 8 }} />}
+              {(bb.data ?? []).map((b) => (
+                <button key={b.id} className="os-bbrow" onClick={() => os.openAppointment(b.id)}>
+                  <span style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}><b style={{ color: "var(--deep)" }}>{b.client}</b><BabyBlueTag /></span>
+                  <span>{b.service} with {b.practitioner}</span>
+                  <span>{relativeDay(b.starts_at)} at {fmtTime(b.starts_at)} · booked {relativeDay(b.created_at)} at {fmtTime(b.created_at)}</span>
+                </button>
+              ))}
+              {bb.data?.length === 0 && <p className="a-hint" style={{ padding: "10px 0 0" }}>No bookings from BabyBlue in the last 7 days. When a patient books you on BabyBlue, it appears here and in your diary, marked “via BabyBlue”.</p>}
+            </div>
+          </section>
+
           <section className="a-card">
             <div className="os-card-h"><h2>Queue right now</h2><Link href="/practice/queue" className="a-link" style={{ fontSize: 14 }}>Open</Link></div>
             <div style={{ padding: "12px 20px 18px" }}>

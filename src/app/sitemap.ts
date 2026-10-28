@@ -3,7 +3,7 @@ import { listingPath } from "@/lib/directory";
 import { getCities, getFacets, getListedSpecialities } from "@/lib/directory-facets";
 import { SITE } from "@/lib/site";
 
-const PATHS = ["/", "/app", "/practitioners", "/os", "/growth", "/flow", "/solutions", "/pricing", "/about", "/contact", "/privacy", "/terms", "/popia"];
+const PATHS = ["/", "/directory", "/app", "/practitioners", "/os", "/growth", "/flow", "/solutions", "/pricing", "/about", "/contact", "/privacy", "/terms", "/popia"];
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date();

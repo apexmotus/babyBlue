@@ -11,7 +11,7 @@ export default function Popia() {
         <h1 className="x-h1" style={{ fontSize: "clamp(2.2rem,4.5vw,3.4rem)", margin: "16px 0 12px" }}>How BabyBlue handles personal information</h1>
         <div className="x-notice warn" style={{ margin: "20px 0" }}>This is a plain-language summary of our approach. It is not a legal opinion and not a certification. BabyBlue has not been independently audited for POPIA compliance.</div>
         <h2>What we keep</h2>
-        <p>The minimum needed to run a booking or a queue: a name, a contact number or email, and appointment details. An ID number is collected only where a practice needs it and the person consents to record storage. Intake answers are structured categories, never free text.</p>
+        <p>The minimum needed to run a booking or a queue: a name, a contact number or email, and appointment details. BabyBlue does not ask the public for ID numbers, passport numbers or dates of birth. Signing up takes a name, an email address and a WhatsApp-compatible mobile number, and nothing more. Intake answers are structured categories, never free text.</p>
         <h2>Who can see it</h2>
         <p>Only the practice a person books with, through role-based access. Practices are isolated from each other, and platform staff access is limited, logged and purpose-bound.</p>
         <h2>Messages</h2>
