@@ -9,3 +9,6 @@ next-env.d.ts
 .data
 src/local/sql.generated.ts
 public/demo-db.tar.gz
+
+# macOS
+.DS_Store
