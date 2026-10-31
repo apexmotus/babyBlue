@@ -1,11 +1,13 @@
 # ROADMAP
 
+Planning documents that feed this roadmap: [`DATABASE_SCHEMA_4NF.md`](DATABASE_SCHEMA_4NF.md) (4NF target schema) · [`STORED_PROCEDURES.md`](STORED_PROCEDURES.md) (the 106-procedure data-access surface) · [`IMPROVEMENT_PLAN.md`](IMPROVEMENT_PLAN.md) (scalability, security, performance; its Tier 0 list is blocking for item 1 below) · [`MULTITENANCY_PLAN.md`](MULTITENANCY_PLAN.md) (white-label platform). All four are proposals; none is applied.
+
 ## Now (unblocked once Supabase project is approved)
-1. **Provision Supabase** (project in an appropriate region), apply `supabase/migrations/*`, set env vars → waitlist/contact go live on the preview.
+1. **Provision Supabase** (project in an appropriate region), apply `supabase/migrations/*`, set env vars → waitlist/contact go live on the preview. **Choose the region deliberately** — it is a POPIA s72 cross-border determination, not a latency preference (see `IMPROVEMENT_PLAN.md` §15). Apply `IMPROVEMENT_PLAN.md` Tier 0 before the first real patient record, in particular `revoke execute … from public` on all functions and `force row level security` on personal-data tables.
 2. **Auth**: Supabase Auth (email + OTP/magic link), `profiles` trigger, route protection, session handling.
 3. **Directory + search**: listed practitioners, speciality/service/location filters, profile pages, verified/unverified display.
 4. **Booking MVP**: availability grid → `hold_slot` → `book_appointment`; my appointments; cancel/reschedule; confirmation + reminder emails (Resend or similar).
-5. **Multi-connection concurrency test** against local Supabase/Postgres in CI (N parallel bookings of one slot → exactly one succeeds).
+5. **Multi-connection concurrency test** against local Supabase/Postgres in CI (N parallel bookings of one slot → exactly one succeeds). All 82 existing database tests run on one PGlite connection, so no concurrency guarantee in the schema is currently covered (`IMPROVEMENT_PLAN.md` §18).
 
 ## Next
 6. **OS**: dashboard (real metrics), calendar + availability editor, appointments & check-in, clients + consent, staff & roles, practice settings, locations.
