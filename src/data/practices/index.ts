@@ -1,0 +1,37 @@
+// The practice directory, released in batches of 100. A batch is live once it is listed here. Each one goes through the
+// data tests (tests/unit/practices-data.test.ts), then production, and is checked there before the next is added.
+// Records come from OpenStreetMap (see source.json, scripts/directory/ and data/directory/README.md).
+import type { DirectoryPractice } from "@/lib/practices/types";
+import b001 from "./batch-001.json";
+import b002 from "./batch-002.json";
+import b003 from "./batch-003.json";
+import b004 from "./batch-004.json";
+import b005 from "./batch-005.json";
+import b006 from "./batch-006.json";
+import b007 from "./batch-007.json";
+import b008 from "./batch-008.json";
+import b009 from "./batch-009.json";
+import b010 from "./batch-010.json";
+import b011 from "./batch-011.json";
+import b012 from "./batch-012.json";
+import b013 from "./batch-013.json";
+import b014 from "./batch-014.json";
+import b015 from "./batch-015.json";
+
+export const BATCHES: DirectoryPractice[][] = [
+  b001 as unknown as DirectoryPractice[],
+  b002 as unknown as DirectoryPractice[],
+  b003 as unknown as DirectoryPractice[],
+  b004 as unknown as DirectoryPractice[],
+  b005 as unknown as DirectoryPractice[],
+  b006 as unknown as DirectoryPractice[],
+  b007 as unknown as DirectoryPractice[],
+  b008 as unknown as DirectoryPractice[],
+  b009 as unknown as DirectoryPractice[],
+  b010 as unknown as DirectoryPractice[],
+  b011 as unknown as DirectoryPractice[],
+  b012 as unknown as DirectoryPractice[],
+  b013 as unknown as DirectoryPractice[],
+  b014 as unknown as DirectoryPractice[],
+  b015 as unknown as DirectoryPractice[],
+];
