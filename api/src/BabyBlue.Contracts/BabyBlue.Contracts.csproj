@@ -1,0 +1,3 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Zero dependencies on BabyBlue.Data, Npgsql, or Dapper (API_LAYER_SPEC §2 rule 3). -->
+</Project>

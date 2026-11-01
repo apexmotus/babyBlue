@@ -47,6 +47,8 @@ Existing (keep): `slot_unavailable`, `hold_expired`, `too_late_to_cancel`, `not_
 
 New (add to `MESSAGES`): `consent_required`, `service_in_use`, `overlapping_availability`, `invalid_range`, `last_practitioner`, `price_required`, `metric_unknown`, `queue_closed`, `asset_too_large`, `not_editable`.
 
+Raised outside this document, but part of the same contract: `too_many_holds` (the `slot_holds_quota()` trigger, [`IMPROVEMENT_PLAN.md`](IMPROVEMENT_PLAN.md) §6) and `profiles_phone_international` (a `check` constraint name on `public.profiles`, migration `0005`, surfaced as SQLSTATE `23514`). Every code in this section must have an entry in [`src/lib/api/messages.ts`](src/lib/api/messages.ts) and a mapping in the API's `ProblemDetailsExceptionHandler`; the three sets are asserted equal in CI.
+
 ## 3. Shared helpers
 
 The four predicates in `0002_functions.sql` are kept and three are added.
@@ -369,7 +371,11 @@ language sql stable security definer set search_path = public as $$
 $$;
 
 create or replace function public.patient_appointment_get(p_appointment uuid)
-returns setof record language sql stable security definer set search_path = public as $$
+returns table (appointment_id uuid, status text, starts_at timestamptz, ends_at timestamptz,
+               practice_name text, practice_slug text, practitioner_name text, service_name text,
+               service_id uuid, price_cents int, currency text, address text, city text,
+               cancellation_notice_hours int, can_cancel boolean, can_check_in boolean)
+language sql stable security definer set search_path = public as $$
   select * from public.patient_appointments_list('all') where appointment_id = p_appointment;
 $$;
 ```
@@ -465,6 +471,11 @@ begin
            coalesce(nullif(substr(p.display_name, strpos(p.display_name, ' ') + 1), ''), '')
       from public.profiles p where p.id = v_uid
     returning id into v_client;
+    -- the patient's own booking is the consent act, so the series starts here (POPIA s11(1)(a)).
+    -- Without this the auto-created client row would have no consent trail at all.
+    insert into public.client_consents (practice_id, client_id, purpose, granted, actor_id, channel, evidence)
+    values (v_h.practice_id, v_client, 'record_storage', true, v_uid, 'app',
+            jsonb_build_object('via', 'patient_appointment_book', 'hold_id', p_hold));
   end if;
 
   insert into public.appointments (practice_id, practitioner_id, service_id, location_id, client_id,
@@ -621,6 +632,9 @@ begin
 
   perform public._audit(null, 'account.deleted', 'profile', v_uid, '{}');
   delete from auth.users where id = v_uid;
+exception
+  -- a retained row that still references this user (0004_app_functions.sql kept this behaviour)
+  when foreign_key_violation then raise exception 'has_records' using errcode = '23503';
 end $$;
 ```
 
@@ -1042,6 +1056,10 @@ declare v_id uuid;
 begin
   perform public._require_role(p_practice, array['practice_owner']::public.practice_role[]);
   if coalesce(trim(p_name), '') = '' then raise exception 'invalid_name' using errcode = '22023'; end if;
+  -- a bookable service must carry a price: the patient sees it before confirming (D-14)
+  if p_active and p_price_cents is null then
+    raise exception 'price_required' using errcode = '22023';
+  end if;
 
   if p_service is null then
     insert into public.services (practice_id, name, description, duration_min, buffer_min, price_cents, active)
@@ -1066,6 +1084,13 @@ create or replace function public.practice_service_practitioners_set(
 returns void language plpgsql security definer set search_path = public as $$
 begin
   perform public._require_role(p_practice, array['practice_owner']::public.practice_role[]);
+  -- emptying the set would orphan future bookings: nobody could deliver them
+  if coalesce(array_length(p_practitioners, 1), 0) = 0
+     and exists (select 1 from public.appointments a
+                  where a.service_id = p_service and a.practice_id = p_practice
+                    and a.starts_at > now() and a.status in ('booked', 'confirmed')) then
+    raise exception 'last_practitioner' using errcode = '23503';
+  end if;
   delete from public.practitioner_services
    where service_id = p_service and practice_id = p_practice
      and practitioner_id <> all (coalesce(p_practitioners, '{}'));
@@ -1440,6 +1465,16 @@ begin
   select * into v_svc from public.services
    where id = p_service and practice_id = p_practice and active;
   if not found then raise exception 'not_found' using errcode = 'P0002'; end if;
+
+  -- POPIA s11: staff may not book a client whose record-storage consent is absent or withdrawn.
+  -- The consent series is append-only, so the current state is the latest event for that purpose.
+  if p_client is not null and not coalesce(
+       (select c.granted from public.client_consents c
+         where c.client_id = p_client and c.practice_id = p_practice
+           and c.purpose = 'record_storage'
+         order by c.at desc limit 1), false) then
+    raise exception 'consent_required' using errcode = '22023';
+  end if;
 
   select co.currency into v_cur from public.practices pr
     join public.countries co on co.code = pr.country_code where pr.id = p_practice;
@@ -2017,7 +2052,10 @@ begin
   if p_kind = 'deliverable' and not public.is_marketing_operator() then
     raise exception 'forbidden' using errcode = '42501';
   end if;
-  if p_size_bytes > 5242880 then raise exception 'asset_too_large' using errcode = '22023'; end if;
+  -- octet_length(p_content), never p_size_bytes: the caller's claimed size is not evidence
+  if octet_length(p_content) > 5242880 then
+    raise exception 'asset_too_large' using errcode = '22023';
+  end if;
 
   insert into public.marketing_assets (request_id, uploaded_by, kind, file_name, mime, size_bytes, content)
   values (p_request, auth.uid(), p_kind, p_file_name, p_mime, p_size_bytes, p_content)
@@ -2028,14 +2066,21 @@ begin
   return v_id;
 end $$;
 
+-- Postgres cannot change a function's return type in place, so the earlier bytea-returning
+-- version must be dropped first. This signature yields the bytes, the MIME type and the
+-- filename in one call, which keeps one endpoint to one procedure.
+drop function if exists public.growth_asset_download(uuid);
+
 create or replace function public.growth_asset_download(p_asset uuid)
-returns bytea language plpgsql security definer set search_path = public as $$
-declare v_request uuid; v_content bytea;
+returns table (file_name text, mime text, content bytea)
+language plpgsql security definer set search_path = public as $$
+declare v_request uuid;
 begin
-  select request_id, content into v_request, v_content from public.marketing_assets where id = p_asset;
+  select a.request_id into v_request from public.marketing_assets a where a.id = p_asset;
   if v_request is null then raise exception 'not_found' using errcode = 'P0002'; end if;
   perform public._require_request_access(v_request, false);
-  return v_content;
+  return query
+  select a.file_name, a.mime, a.content from public.marketing_assets a where a.id = p_asset;
 end $$;
 
 create or replace function public.growth_reports_list(p_request uuid)
@@ -2067,7 +2112,8 @@ begin
   -- every metric key must exist in metric_definitions; an unknown key fails loudly
   for v_key in select jsonb_object_keys(coalesce(p_metrics, '{}')) loop
     if not exists (select 1 from public.metric_definitions where key = v_key and active) then
-      raise exception 'metric_unknown' using errcode = '23503', detail = v_key;
+      -- the key goes in the message, not in `detail`: the API never serialises PostgresException.Detail
+      raise exception 'metric_unknown: %', v_key using errcode = '23503';
     end if;
     insert into public.campaign_report_metrics (report_id, metric_key, value)
     values (v_id, v_key, (p_metrics ->> v_key)::numeric);

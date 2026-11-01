@@ -9,7 +9,8 @@ import { VerifiedBadge } from "@/components/patient/PractitionerCard";
 import { SlotPicker } from "@/components/patient/SlotPicker";
 import { fmtTime, money, relativeDay } from "@/lib/format";
 import { getProfile } from "@/lib/patient-data";
-import { friendlyError, mutate } from "@/local/db";
+import { holdSlot } from "@/lib/api/patient";
+import { friendlyError } from "@/lib/api/messages";
 import { useSession } from "@/local/auth";
 import { useQuery } from "@/local/hooks";
 import { useToast } from "@/components/ui";
@@ -60,7 +61,7 @@ function Profile() {
     setBusy(true);
     setError("");
     try {
-      const [{ id: holdId }] = await mutate<{ id: string }>(uid, "select public.hold_slot($1, $2, $3::timestamptz) as id", [id, svc.id, slot]);
+      const { id: holdId } = await holdSlot(uid, { practitioner_id: id, service_id: svc.id, starts_at: slot });
       router.push(`/patient/book/${holdId}`);
     } catch (e) {
       setError(friendlyError(e));

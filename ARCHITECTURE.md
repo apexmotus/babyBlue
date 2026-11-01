@@ -3,19 +3,29 @@
 ## Overview
 
 ```
-Browser ──► Next.js (Vercel)  ──► Supabase Postgres (RLS + SQL functions)
-              │  marketing site (static)
-              │  /api/leads (server, service role, validation, throttle)
-              │  App / OS / Growth / Flow UIs (to be wired, use user JWT → RLS)
-              └  Flow demo (/c /q /staff, browser storage, fictional data)
+Browser / mobile
+  │
+  ├──► Next.js (Vercel)
+  │      │  marketing site & static listing shells
+  │      │  /api/leads (server, service role, validation, throttle)
+  │      │  App / OS / Growth / Flow UIs (forward Bearer JWT via src/lib/api/*)
+  │      └  Flow demo (/c /q /staff, browser storage, fictional data)
+  │
+  └──► BabyBlue.Api (.NET 10, ASP.NET Core MVC controllers)
+         │  JWT validation, Host → brand resolution, per-user/IP rate limits, OutputCache
+         │  Pooled NpgsqlDataSource as `bb_api` (noinherit, nobypassrls)
+         │  Per-transaction `SessionContext` (`set local search_path / role / statement_timeout / sub`)
+         ▼
+       Supabase Postgres (RLS + 106 SQL stored functions)
 ```
 
-Principle: **the database is the security boundary.** Clients use the user's JWT; RLS decides what they can see. Only the server-side lead endpoint uses the service-role key.
+Principle: **the database is the security boundary.** Clients authenticate with Supabase Auth and send their Bearer JWT to `BabyBlue.Api`, which applies the caller's identity and brand schema per transaction via `set local` so PostgreSQL RLS and `SECURITY DEFINER` procedure checks remain the sole authority on access (D-30). Only the Next.js server-side `/api/leads` endpoint holds the Supabase service-role key.
 
 ## Repository layout
 
 | Path | Purpose |
 |---|---|
+| `api/` | `.NET 10` API solution (`BabyBlue.Api`, `BabyBlue.Data`, `BabyBlue.Contracts`, `BabyBlue.ContractGen`, unit & integration test suites) |
 | `src/app/(site)/` | Public marketing site (13 pages) + `site.css` |
 | `src/app/(site)/[speciality]`, `[speciality]/[city]`, `in/[city]` | Public listing pages (see below) |
 | `src/components/front/` · `src/styles/front.css` | Finder, tiles, reveal, listing page: the hybrid front-door layer |
@@ -58,6 +68,7 @@ Principle: **the database is the security boundary.** Clients use the user's JWT
 | Staff / Practitioner | Own practice's appointments, clients, queue |
 | Marketing operator | Submitted Growth requests and their assets/approvals/reports **only** — no clients, appointments or queues |
 | Platform admin | Activate practices, verify practitioners, read directory/registrations, manage marketing catalogue. No blanket client-data access |
+| `bb_api` (API login role) | Zero direct table grants, `noinherit`, `nobypassrls`, owns no objects; may only `SET LOCAL ROLE anon` or `SET LOCAL ROLE authenticated` inside a request transaction (D-30) |
 
 ## Booking flow (concurrency-safe)
 

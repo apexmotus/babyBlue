@@ -11,7 +11,8 @@ import { SlotPicker } from "@/components/patient/SlotPicker";
 import { useToast } from "@/components/ui";
 import { STATUS_UI, type MyAppt } from "@/lib/appt";
 import { downloadText, fmtLongDate, fmtTime, icsFor, money, untilText } from "@/lib/format";
-import { friendlyError, mutate, query } from "@/local/db";
+import { cancelMyAppointment, checkInAppointment, getMyAppointment, rescheduleMyAppointment } from "@/lib/api/patient";
+import { friendlyError } from "@/lib/api/messages";
 import { useSession } from "@/local/auth";
 import { useQuery } from "@/local/hooks";
 
@@ -39,10 +40,7 @@ function Detail() {
   const [qr, setQr] = useState("");
 
   const q = useQuery(
-    async () => {
-      const [a] = await query<Appt>(uid, "select m.*, a.service_id from public.my_appointments() m join public.appointments a on a.id = m.id where m.id = $1", [id]);
-      return a ?? null;
-    },
+    () => getMyAppointment(uid, id),
     [uid, id],
     { poll: 10000 },
   );
@@ -139,7 +137,7 @@ function Detail() {
             <h3 style={{ fontSize: 18 }}>Arrived at the practice?</h3>
             <p style={{ color: "var(--ink-2)", fontSize: 14 }}>Let reception know you&apos;re here. You&apos;ll join today&apos;s queue.</p>
           </div>
-          <Btn className="primary" loading={busy} onClick={() => run(() => mutate(uid, "select public.check_in_appointment($1)", [id]), "You're checked in")}>I&apos;ve arrived</Btn>
+          <Btn className="primary" loading={busy} onClick={() => run(() => checkInAppointment(uid, id), "You're checked in")}>I&apos;ve arrived</Btn>
         </section>
       )}
 
@@ -179,8 +177,8 @@ function Detail() {
         </section>
       )}
 
-      {sheet === "cancel" && <CancelSheet onClose={() => setSheet(null)} busy={busy} onConfirm={(reason) => run(() => mutate(uid, "select public.cancel_appointment($1, $2)", [id, reason]), "Appointment cancelled")} />}
-      {sheet === "resched" && <ReschedSheet a={a} uid={uid} busy={busy} onClose={() => setSheet(null)} onConfirm={(iso) => run(() => mutate(uid, "select public.reschedule_appointment($1, $2::timestamptz)", [id, iso]), "Appointment moved")} />}
+      {sheet === "cancel" && <CancelSheet onClose={() => setSheet(null)} busy={busy} onConfirm={(reason) => run(() => cancelMyAppointment(uid, id, reason), "Appointment cancelled")} />}
+      {sheet === "resched" && <ReschedSheet a={a} uid={uid} busy={busy} onClose={() => setSheet(null)} onConfirm={(iso) => run(() => rescheduleMyAppointment(uid, id, iso), "Appointment moved")} />}
     </div>
   );
 }
@@ -196,7 +194,8 @@ function CancelSheet({ onClose, onConfirm, busy }: { onClose: () => void; onConf
       footer={<><button className="a-btn ghost" onClick={onClose}>Keep it</button><Btn className="danger-solid" loading={busy} onClick={() => onConfirm(reason)}>Cancel appointment</Btn></>}
     >
       <Field label="Reason (optional)" htmlFor="reason">
-        <select id="reason" className="a-select" value={reason} onChange={(e) => setReason(e.target.value)}>{REASONS.map((r) => <option key={r}>{r}</option>)}</select>
+        <select
+          id="reason" className="a-select" value={reason} onChange={(e) => setReason(e.target.value)}>{REASONS.map((r) => <option key={r}>{r}</option>)}</select>
       </Field>
     </Sheet>
   );

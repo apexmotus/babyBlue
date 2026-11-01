@@ -90,35 +90,11 @@ export async function system<T = Record<string, unknown>>(sql: string, params: u
 export const announceChange = announce;
 
 /* ───────────── friendly errors ───────────── */
-const MESSAGES: Record<string, string> = {
-  slot_unavailable: "Sorry, that time was just taken. Please choose another.",
-  hold_expired: "Your held time ran out. Please pick a time again.",
-  too_late_to_cancel: "This is inside the practice's cancellation window, so it can't be changed online. Please contact the practice.",
-  not_cancellable: "This appointment can no longer be cancelled.",
-  not_reschedulable: "This appointment can no longer be rescheduled.",
-  too_early_to_check_in: "Check-in opens 2 hours before your appointment.",
-  not_checkin_able: "This appointment can't be checked in.",
-  invalid_transition: "That status change isn't allowed from the current status.",
-  user_not_found: "No BabyBlue account uses that email yet. Ask them to sign up first.",
-  sole_owner: "You're the only owner of this practice, so you can't be removed. Add another owner first.",
-  has_records: "This account still has records attached and can't be deleted automatically. Contact us to complete the request.",
-  registration_in_use: "That registration number is already linked to another profile.",
-  invalid_registration: "Enter the registration body and a registration number.",
-  invalid_name: "Please enter a name.",
-  not_authenticated: "Please sign in to continue.",
-  forbidden: "You don't have permission to do that.",
-  not_found: "That record could not be found.",
-  profiles_phone_international: "Enter your WhatsApp number in international format, for example +27 82 431 9087.",
-};
-export function friendlyError(e: unknown): string {
-  const msg = e instanceof Error ? e.message : String(e);
-  for (const k of Object.keys(MESSAGES)) if (msg.includes(k)) return MESSAGES[k];
-  if (msg.includes("row-level security")) return "You don't have permission to do that.";
-  if (msg.includes("duplicate key") && msg.includes("slug")) return "That web address is already taken. Try another.";
-  if (msg.includes("duplicate key")) return "That already exists.";
-  if (msg.includes("no_double_booking")) return "That time overlaps another appointment.";
-  return msg.replace(/^error: /i, "");
-}
+// The code → prose contract lives in src/lib/api/messages.ts, which has no dependencies so
+// that Server Components and src/lib/api/http.ts can import it (this module cannot: it is
+// "use client" and pulls in PGlite). Re-exported here because the demo screens import from
+// "@/local/db".
+export { MESSAGES, friendlyError } from "@/lib/api/messages";
 
 // Debug handle for performance checks from the browser console.
 if (typeof window !== "undefined") (window as unknown as { __bb: unknown }).__bb = { getDb, query };

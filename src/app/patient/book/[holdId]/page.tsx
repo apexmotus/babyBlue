@@ -7,14 +7,10 @@ import { CalendarClock, Info, ShieldCheck, TimerOff } from "lucide-react";
 import { Avatar, Btn, Empty, Notice } from "@/components/app/primitives";
 import { RequireAuth } from "@/components/patient/RequireAuth";
 import { fmtLongDate, fmtTime, money } from "@/lib/format";
-import { friendlyError, mutate, query } from "@/local/db";
+import { bookAppointment, getHold, releaseHold } from "@/lib/api/patient";
+import { friendlyError } from "@/lib/api/messages";
 import { useSession } from "@/local/auth";
 import { useNow, useQuery } from "@/local/hooks";
-
-interface Hold {
-  id: string; starts_at: Date; ends_at: Date; expires_at: Date; practitioner_id: string; display_name: string; speciality: string;
-  service_name: string; price_cents: number | null; duration_min: number; practice_name: string; cancellation_notice_hours: number; address: string | null; city: string | null;
-}
 
 export default function BookPage() {
   return (
@@ -48,11 +44,7 @@ function Confirm() {
   const [error, setError] = useState("");
 
   const hold = useQuery(
-    async () =>
-      (await query<Hold>(uid, `select h.id, h.starts_at, h.ends_at, h.expires_at, h.practitioner_id, p.display_name, p.speciality, s.name service_name, s.price_cents, s.duration_min,
-          pr.name practice_name, pr.cancellation_notice_hours, l.address, l.city
-        from public.slot_holds h join public.practitioners p on p.id = h.practitioner_id join public.services s on s.id = h.service_id join public.practices pr on pr.id = h.practice_id
-        left join lateral (select address, city from public.locations where practice_id = pr.id limit 1) l on true where h.id = $1`, [holdId]))[0] ?? null,
+    () => getHold(uid, holdId),
     [uid, holdId],
   );
 
@@ -74,7 +66,7 @@ function Confirm() {
     setBusy(true);
     setError("");
     try {
-      const [{ id }] = await mutate<{ id: string }>(uid, "select public.book_appointment($1) as id", [holdId]);
+      const { id } = await bookAppointment(uid, holdId);
       router.replace(`/patient/appointments/${id}?booked=1`);
     } catch (e) {
       setError(friendlyError(e));
@@ -82,7 +74,7 @@ function Confirm() {
     }
   }
   async function release() {
-    await mutate(uid, "select public.release_hold($1)", [holdId]);
+    await releaseHold(uid, holdId);
     router.push(`/patient/p/${h!.practitioner_id}`);
   }
 

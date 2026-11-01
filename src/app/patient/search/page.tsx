@@ -6,8 +6,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { BadgeCheck, MapPin, Search, SearchX, SlidersHorizontal, X } from "lucide-react";
 import { Empty, Field, Sheet, Switch } from "@/components/app/primitives";
 import { PractitionerCard, PractitionerCardSkeleton } from "@/components/patient/PractitionerCard";
+import { listCities, listSpecialities } from "@/lib/api/public";
 import { SPECIALITIES, searchPractitioners } from "@/lib/patient-data";
-import { query } from "@/local/db";
 import { useQuery } from "@/local/hooks";
 import { useSession } from "@/local/auth";
 
@@ -41,8 +41,8 @@ function SearchInner() {
   };
 
   const results = useQuery(() => searchPractitioners(uid, { q, speciality, city, verifiedOnly: verified }), [uid, q, speciality, city, verified]);
-  const cities = useQuery(() => query<{ city: string }>(null, "select distinct l.city from public.locations l join public.practices p on p.id = l.practice_id where l.city is not null order by 1"), []);
-  const specs = useQuery(() => query<{ speciality: string; n: number }>(null, "select speciality, count(*)::int n from public.practitioners where listing_status = 'listed' group by 1 order by 1"), []);
+  const cities = useQuery(() => listCities(null), []);
+  const specs = useQuery(() => listSpecialities(null), []);
 
   const rows = useMemo(() => {
     const r = [...(results.data ?? [])];
@@ -62,16 +62,20 @@ function SearchInner() {
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           <button className={`a-chip ${!speciality ? "on" : ""}`} style={{ justifyContent: "flex-start" }} onClick={() => set({ speciality: null })} aria-pressed={!speciality}>All specialities</button>
           {(specs.data ?? []).map((s) => (
-            <button key={s.speciality} className={`a-chip ${speciality === s.speciality ? "on" : ""}`} style={{ justifyContent: "space-between" }} onClick={() => set({ speciality: s.speciality })} aria-pressed={speciality === s.speciality}>
-              <span>{s.speciality}</span><span style={{ opacity: 0.6, fontSize: 12.5 }}>{s.n}</span>
+            <button key={s.name} className={`a-chip ${speciality === s.name ? "on" : ""}`} style={{ justifyContent: "space-between" }} onClick={() => set({ speciality: s.name })} aria-pressed={speciality === s.name}>
+              <span>{s.name}</span><span style={{ opacity: 0.6, fontSize: 12.5 }}>{s.practitioner_count}</span>
             </button>
           ))}
         </div>
       </div>
       <Field label="City" htmlFor="f-city">
-        <select id="f-city" className="a-select" value={city} onChange={(e) => set({ city: e.target.value || null })}>
+        <select
+          id="f-city"
+          className="a-select"
+          value={city}
+          onChange={(e) => set({ city: e.target.value || null })}>
           <option value="">Anywhere</option>
-          {(cities.data ?? []).map((c) => <option key={c.city}>{c.city}</option>)}
+          {(cities.data ?? []).map((c) => <option key={c.slug} value={c.name}>{c.name}</option>)}
         </select>
       </Field>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
@@ -82,7 +86,11 @@ function SearchInner() {
         <Switch on={verified} onChange={(v) => set({ verified: v ? "1" : null })} label="Verified only" />
       </div>
       <Field label="Sort by" htmlFor="f-sort">
-        <select id="f-sort" className="a-select" value={sort} onChange={(e) => set({ sort: e.target.value === "soonest" ? null : e.target.value })}>
+        <select
+          id="f-sort"
+          className="a-select"
+          value={sort}
+          onChange={(e) => set({ sort: e.target.value === "soonest" ? null : e.target.value })}>
           <option value="soonest">Soonest available</option>
           <option value="price">Lowest fee</option>
           <option value="name">Name A–Z</option>

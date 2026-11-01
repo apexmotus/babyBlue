@@ -12,3 +12,19 @@ public/demo-db.tar.gz
 
 # macOS
 .DS_Store
+
+# .NET
+api/**/bin/
+api/**/obj/
+api/**/TestResults/
+.vs/
+*.user
+
+# .NET / NuGet caches created when dotnet runs with a redirected HOME.
+# These are 186 MB of package binaries; they must never enter history.
+api/.nuget/
+api/.local/
+api/**/.nuget/
+api/**/.local/
+.nuget/
+Library/

@@ -6,16 +6,14 @@ import { useState } from "react";
 import { CheckCircle2, DoorOpen, LogOut, Users, XCircle } from "lucide-react";
 import { Badge, Btn, Empty, Sheet } from "@/components/app/primitives";
 import { Logo } from "@/components/ui";
-import { mutate, query } from "@/local/db";
+import { getQueueStatus, leaveQueue } from "@/lib/api/public";
 import { useQuery } from "@/local/hooks";
-
-interface Status { status: "waiting" | "in_consultation" | "done" | "cancelled"; queue_position: number | null; practice_name: string }
 
 export default function QueueStatus() {
   const { token } = useParams<{ token: string }>();
   const [leave, setLeave] = useState(false);
   const [busy, setBusy] = useState(false);
-  const q = useQuery(() => query<Status>(null, "select * from public.get_queue_status($1)", [token]).then((r) => r[0] ?? null), [token], { poll: 3000 });
+  const q = useQuery(() => getQueueStatus(token), [token], { poll: 3000 });
   const s = q.data;
 
   const Shell = ({ children }: { children: React.ReactNode }) => (
@@ -78,7 +76,7 @@ export default function QueueStatus() {
       )}
       {leave && (
         <Sheet title="Leave the queue?" sub={`You'll lose position #${pos}. To be seen you'd have to join again, behind everyone waiting.`} onClose={() => setLeave(false)} size="narrow"
-          footer={<><button className="a-btn primary" onClick={() => setLeave(false)}>Keep my place</button><Btn className="danger" loading={busy} onClick={async () => { setBusy(true); await mutate(null, "select public.leave_queue($1)", [token]); setBusy(false); setLeave(false); }}><LogOut size={16} /> Leave</Btn></>}>
+          footer={<><button className="a-btn primary" onClick={() => setLeave(false)}>Keep my place</button><Btn className="danger" loading={busy} onClick={async () => { setBusy(true); await leaveQueue(token); setBusy(false); setLeave(false); }}><LogOut size={16} /> Leave</Btn></>}>
           <span />
         </Sheet>
       )}

@@ -10,11 +10,10 @@ import { NextAvailable, PractitionerCard, PractitionerCardSkeleton } from "@/com
 import { fmtTime, relativeDay, untilText } from "@/lib/format";
 import { SPECIALITY_PAGES } from "@/lib/directory";
 import { searchPractitioners } from "@/lib/patient-data";
-import { query } from "@/local/db";
+import { listCities } from "@/lib/api/public";
+import { listMyAppointments } from "@/lib/api/patient";
 import { useSession } from "@/local/auth";
 import { useQuery } from "@/local/hooks";
-
-interface Appt { id: string; starts_at: Date; practitioner_name: string; service_name: string; practice_name: string; status: string }
 
 export default function PatientHome() {
   const router = useRouter();
@@ -24,9 +23,16 @@ export default function PatientHome() {
   const uid = session?.userId ?? null;
 
   const featured = useQuery(() => searchPractitioners(uid, { limit: 12 }), [uid]);
-  const cities = useQuery(() => query<{ city: string }>(null, "select distinct l.city from public.locations l join public.practices p on p.id = l.practice_id where l.city is not null order by 1"), []);
+  const cities = useQuery(
+    () => listCities().then((rows) => rows.map((r) => ({ city: r.name }))),
+    [],
+  );
   const next = useQuery(
-    async () => (uid ? (await query<Appt>(uid, "select id, starts_at, practitioner_name, service_name, practice_name, status::text from public.my_appointments() where status in ('booked','confirmed','checked_in') and starts_at > now() - interval '30 minutes' order by starts_at limit 1"))[0] ?? null : null),
+    async () => {
+      if (!uid) return null;
+      const rows = await listMyAppointments(uid, "upcoming");
+      return rows.sort((a, b) => a.starts_at.getTime() - b.starts_at.getTime())[0] ?? null;
+    },
     [uid],
   );
   const availableToday = (featured.data ?? []).filter((p) => p.next_available && relativeDay(p.next_available) === "Today");
@@ -53,7 +59,8 @@ export default function PatientHome() {
           </div>
           <div className="a-input-wrap">
             <MapPin size={18} />
-            <select className="a-select" style={{ paddingLeft: 42 }} value={city} onChange={(e) => setCity(e.target.value)} aria-label="City">
+            <select
+              className="a-select" style={{ paddingLeft: 42 }} value={city} onChange={(e) => setCity(e.target.value)} aria-label="City">
               <option value="">Anywhere</option>
               {(cities.data ?? []).map((c) => <option key={c.city}>{c.city}</option>)}
             </select>

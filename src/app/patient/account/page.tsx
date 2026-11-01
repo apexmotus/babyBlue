@@ -8,7 +8,9 @@ import { RequireAuth } from "@/components/patient/RequireAuth";
 import { useToast } from "@/components/ui";
 import { downloadText } from "@/lib/format";
 import { parseWhatsApp } from "@/lib/phone";
-import { friendlyError, mutate, query, resetLocalDb } from "@/local/db";
+import { deleteMyAccount, exportMyAccount, getMyProfile, updateMyProfile } from "@/lib/api/patient";
+import { friendlyError } from "@/lib/api/messages";
+import { resetLocalDb } from "@/local/db";
 import { useSession } from "@/local/auth";
 import { useQuery } from "@/local/hooks";
 
@@ -25,7 +27,7 @@ function Account() {
   const uid = session!.userId;
   const router = useRouter();
   const toast = useToast();
-  const profile = useQuery(() => query<{ display_name: string; phone: string | null }>(uid, "select display_name, phone from public.profiles where id = $1", [uid]).then((r) => r[0]), [uid]);
+  const profile = useQuery(() => getMyProfile(uid), [uid]);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [busy, setBusy] = useState(false);
@@ -44,7 +46,7 @@ function Account() {
     if (!wa.ok) return toast(wa.message);
     setBusy(true);
     try {
-      await mutate(uid, "update public.profiles set display_name = $2, phone = $3 where id = $1", [uid, name.trim(), wa.e164]);
+      await updateMyProfile(uid, { display_name: name.trim(), phone: wa.e164 });
       setPhone(wa.e164);
       const s = JSON.parse(localStorage.getItem("bb_session_patient") ?? "{}");
       localStorage.setItem("bb_session_patient", JSON.stringify({ ...s, name: name.trim() }));
@@ -54,16 +56,15 @@ function Account() {
   }
 
   async function exportData() {
-    const [p] = await query(uid, "select id, display_name, phone, created_at from public.profiles where id = $1", [uid]);
-    const appts = await query(uid, "select id, status, starts_at, ends_at, practice_name, practitioner_name, service_name, price_cents from public.my_appointments()");
-    downloadText("my-babyblue-data.json", "application/json", JSON.stringify({ exportedAt: new Date().toISOString(), account: { email: session!.email, ...p }, appointments: appts }, null, 2));
+    const exported = await exportMyAccount(uid);
+    downloadText("babyblue-export.json", "application/json", JSON.stringify(exported, null, 2));
     toast("Your data was downloaded");
   }
 
   async function remove() {
     setBusy(true);
     try {
-      await mutate(uid, "select public.delete_my_account()");
+      await deleteMyAccount(uid);
       signOut();
       toast("Your account was deleted");
       router.replace("/patient");
@@ -85,7 +86,10 @@ function Account() {
 
       <section className="a-card pad" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <h2 style={{ fontSize: 18, display: "flex", gap: 8, alignItems: "center" }}><ShieldCheck size={20} color="#1d6f86" /> Your data</h2>
-        <p style={{ color: "var(--ink-2)", fontSize: 14.5 }}>You&apos;re in control. Download everything BabyBlue holds about you, or delete your account. Upcoming appointments are cancelled, and practices keep only the administrative record they need.</p>
+        <p style={{ color: "var(--ink-2)", fontSize: 14.5 }}>
+          You&apos;re in control. Download everything BabyBlue holds about you, or delete
+          your account. Upcoming appointments are cancelled, and practices keep only the administrative record they need.
+        </p>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <button className="a-btn secondary" onClick={exportData}><Download size={17} /> Download my data</button>
           <button className="a-btn danger" onClick={() => setDel(true)}><Trash2 size={17} /> Delete account</button>

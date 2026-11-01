@@ -116,3 +116,61 @@ describe("verification badges", () => {
     expect(await run(db, I.platformAdmin, "select * from public.practitioner_registrations")).toHaveLength(1);
   });
 });
+
+describe("API login role (bb_api) and brand registry (0006)", () => {
+  it("configures bb_api as noinherit, nobypassrls, with connection limit 85 and zero direct table grants", async () => {
+    const [role] = await run<{
+      rolinherit: boolean;
+      rolbypassrls: boolean;
+      rolconnlimit: number;
+      can_anon: boolean;
+      can_auth: boolean;
+      can_service: boolean;
+    }>(
+      db,
+      "admin-db",
+      `select rolinherit,
+              rolbypassrls,
+              rolconnlimit,
+              pg_has_role('bb_api', 'anon', 'member') as can_anon,
+              pg_has_role('bb_api', 'authenticated', 'member') as can_auth,
+              pg_has_role('bb_api', 'service_role', 'member') as can_service
+         from pg_roles
+        where rolname = 'bb_api'`,
+    );
+    expect(role).toEqual({
+      rolinherit: false,
+      rolbypassrls: false,
+      rolconnlimit: 85,
+      can_anon: true,
+      can_auth: true,
+      can_service: false,
+    });
+
+    // Without SET LOCAL ROLE, bb_api fails closed with 42501 when calling a public procedure:
+    await db.exec("set role bb_api;");
+    try {
+      await expect(db.query("select * from public.public_city_list()")).rejects.toThrow(/permission denied/);
+    } finally {
+      await db.exec("reset role;");
+    }
+  });
+
+  it("resolves verified brand domains via resolve_brand while denying direct table access", async () => {
+    const [brand] = await run<{ slug: string; schema_name: string; status: string; features: Record<string, unknown> }>(
+      db,
+      "anon",
+      "select slug, schema_name, status, features from public.resolve_brand('babyblue.co.za')",
+    );
+    expect(brand.slug).toBe("babyblue");
+    expect(brand.schema_name).toBe("public");
+    expect(brand.status).toBe("active");
+    expect(brand.features.booking).toBe(true);
+    expect(brand.features.growth).toBe(true);
+    expect(brand.features.clinical).toBe(false);
+
+    expect(await run(db, "anon", "select * from public.resolve_brand('unknown.example.com')")).toHaveLength(0);
+    await expect(run(db, "anon", "select * from public.tenant_brands")).rejects.toThrow(/permission denied/);
+    await expect(run(db, I.ownerA, "select * from public.tenant_brands")).rejects.toThrow(/permission denied/);
+  });
+});

@@ -6,13 +6,14 @@ import { useState } from "react";
 import { Clock, EyeOff, MapPin, Users } from "lucide-react";
 import { Btn, Empty, Field, Notice } from "@/components/app/primitives";
 import { Logo } from "@/components/ui";
-import { friendlyError, mutate, query } from "@/local/db";
+import { getQueueInfo, joinQueue } from "@/lib/api/public";
+import { friendlyError } from "@/lib/api/messages";
 import { useQuery } from "@/local/hooks";
 
 export default function JoinQueue() {
   const { slug } = useParams<{ slug: string }>();
   const router = useRouter();
-  const info = useQuery(() => query<{ practice_name: string; address: string | null; city: string | null; waiting: number; accepting: boolean }>(null, "select * from public.public_queue_info($1)", [slug]).then((r) => r[0] ?? null), [slug], { poll: 8000 });
+  const info = useQuery(() => getQueueInfo(slug), [slug], { poll: 8000 });
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [busy, setBusy] = useState(false);
@@ -22,13 +23,15 @@ export default function JoinQueue() {
   if (info.loading && info.data === undefined) return <div style={{ maxWidth: 460, margin: "40px auto", padding: 20 }}><div className="a-card pad"><div className="a-skel" style={{ height: 300 }} /></div></div>;
   if (!i) return <div style={{ maxWidth: 460, margin: "40px auto", padding: 20 }}><div className="a-card"><Empty icon={<Users size={28} />} title="This queue isn't available" action={<Link href="/patient" className="a-btn primary">Find a practitioner</Link>}>The QR code may be out of date, or the practice isn&apos;t open for walk-ins.</Empty></div></div>;
 
+  const waiting = i.waiting_count ?? 0;
+
   async function join(e: React.FormEvent) {
     e.preventDefault();
     if (name.trim().length < 2) return setError("Please enter your name.");
     setBusy(true);
     setError("");
     try {
-      const [{ token }] = await mutate<{ token: string }>(null, "select public.join_queue($1, $2, $3) as token", [slug, name.trim(), phone.trim() || null]);
+      const token = await joinQueue(slug, name.trim(), phone.trim() || null);
       router.push(`/patient/queue/${token}`);
     } catch (err) { setError(friendlyError(err)); setBusy(false); }
   }
@@ -41,8 +44,8 @@ export default function JoinQueue() {
         <h1 style={{ fontSize: 26, marginTop: 6 }}>{i.practice_name}</h1>
         <p style={{ color: "var(--ink-2)", fontSize: 14, marginTop: 4, display: "flex", gap: 5, justifyContent: "center", alignItems: "center" }}><MapPin size={14} /> {i.address}, {i.city}</p>
         <div style={{ display: "flex", justifyContent: "center", gap: 22, marginTop: 18 }}>
-          <div><b className="tnum" style={{ fontFamily: "var(--font-head)", fontSize: 30, color: "var(--deep)" }}>{i.waiting}</b><p style={{ fontSize: 12.5, color: "var(--ink-2)" }}>waiting now</p></div>
-          <div><b className="tnum" style={{ fontFamily: "var(--font-head)", fontSize: 30, color: "var(--deep)" }}>{i.waiting === 0 ? "<10" : `${Math.max(1, i.waiting) * 10}+`}</b><p style={{ fontSize: 12.5, color: "var(--ink-2)" }}>est. minutes</p></div>
+          <div><b className="tnum" style={{ fontFamily: "var(--font-head)", fontSize: 30, color: "var(--deep)" }}>{waiting}</b><p style={{ fontSize: 12.5, color: "var(--ink-2)" }}>waiting now</p></div>
+          <div><b className="tnum" style={{ fontFamily: "var(--font-head)", fontSize: 30, color: "var(--deep)" }}>{waiting === 0 ? "<10" : `${Math.max(1, waiting) * 10}+`}</b><p style={{ fontSize: 12.5, color: "var(--ink-2)" }}>est. minutes</p></div>
         </div>
         <p className="a-hint" style={{ marginTop: 10 }}>Estimates are a guide, not a booked time.</p>
       </div>

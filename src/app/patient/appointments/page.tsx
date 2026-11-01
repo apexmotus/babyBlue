@@ -7,7 +7,7 @@ import { Badge, Empty, Skel } from "@/components/app/primitives";
 import { RequireAuth } from "@/components/patient/RequireAuth";
 import { fmtDayMonth, fmtMonthShort, fmtTime, fmtWeekday, money, relativeDay, untilText } from "@/lib/format";
 import { STATUS_UI, type MyAppt } from "@/lib/appt";
-import { query } from "@/local/db";
+import { listMyAppointments } from "@/lib/api/patient";
 import { useSession } from "@/local/auth";
 import { useQuery } from "@/local/hooks";
 
@@ -23,7 +23,7 @@ function List() {
   const { session } = useSession("patient");
   const uid = session!.userId;
   const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
-  const appts = useQuery(() => query<MyAppt>(uid, "select * from public.my_appointments()"), [uid], { poll: 15000 });
+  const appts = useQuery(() => listMyAppointments(uid, "all"), [uid], { poll: 15000 });
   const now = Date.now();
   const live = (a: MyAppt) => ["booked", "confirmed", "checked_in", "in_progress"].includes(a.status) && a.ends_at.getTime() > now;
   const upcoming = (appts.data ?? []).filter(live).sort((a, b) => a.starts_at.getTime() - b.starts_at.getTime());

@@ -1,0 +1,133 @@
+name: CI
+
+on:
+  push:
+    branches: [main, staging, dev]
+  pull_request:
+    branches: [main, staging, dev]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: "true"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+
+jobs:
+  web:
+    name: Next.js (typecheck + vitest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Unit and database tests
+        run: npm test
+
+  api:
+    name: .NET API (build + test)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      # The fixture uses this instead of booting its own cluster via initdb/pg_ctl.
+      BABYBLUE_TEST_POSTGRES_ADMIN_CS: "Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres;SslMode=Disable;Pooling=false;Include Error Detail=true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: api/global.json
+      - name: Restore
+        run: dotnet restore api/BabyBlue.Api.sln
+      - name: Build (warnings are errors)
+        run: dotnet build api/BabyBlue.Api.sln --no-restore -c Release
+      - name: Test
+        run: dotnet test api/BabyBlue.Api.sln --no-build -c Release
+
+  generated-contracts:
+    name: Gate - Generated/ is in step with pg_proc
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: api/global.json
+      - name: Apply bootstrap and migrations
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f api/tests/BabyBlue.Integration.Tests/Fixtures/supabase-bootstrap.sql
+          for f in supabase/migrations/*.sql; do
+            echo "applying $f"
+            psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f "$f"
+          done
+      - name: Regenerate contracts (runs generator assertions 1-5)
+        run: |
+          dotnet run --project api/tools/BabyBlue.ContractGen/BabyBlue.ContractGen.csproj -- \
+            --connection "Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres;SslMode=Disable"
+      - name: Gate - no drift between pg_proc and committed Generated/
+        run: |
+          if ! git diff --exit-code -- api/src/BabyBlue.Data/Generated/; then
+            echo "::error::Generated/ is stale. Run BabyBlue.ContractGen and commit the result."
+            exit 1
+          fi
+
+  boundaries:
+    name: Gate - no SQL outside the data layer
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Gate - zero SQL in src/app and src/components
+        run: |
+          # API_LAYER_SPEC §26 / Phase 3 exit gate: product UI reaches the database only
+          # through the API layer. Scoped to src/app/patient, the one surface migrated so far.
+          #
+          # NOT src/lib/api: those modules are the data-access layer and hold the deliberate
+          # PGlite fallback for the offline demo (`hasRemoteApi() === false`). Widen this to
+          # src/app/practice and src/components/os as Phases 4-5 migrate them, and to all of
+          # src/app and src/components at the Phase 5 cutover.
+          if grep -rInE '\b(select|insert into|update|delete from)\b[[:space:]].*\bfrom\b|\bfrom public\.' \
+               src/app/patient; then
+            echo "::error::Raw SQL found in src/app/patient. It belongs in a stored procedure."
+            exit 1
+          fi
+          echo "No SQL in src/app/patient"
+
+      - name: Gate - no vendored package caches
+        run: |
+          if git ls-files | grep -E '(^|/)\.nuget/|(^|/)\.local/|\.nupkg$|\.dll$'; then
+            echo "::error::A package cache or binary is tracked. See .gitignore."
+            exit 1
+          fi
+          echo "No vendored caches tracked."
