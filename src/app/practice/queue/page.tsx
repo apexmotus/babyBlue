@@ -9,10 +9,15 @@ import { useOs } from "@/components/os/OsContext";
 import { useToast } from "@/components/ui";
 import { addDaysKey, dayStart, fmtTime, todayKey } from "@/lib/format";
 import { loadEvents } from "@/lib/os-data";
-import { friendlyError, mutate, query } from "@/local/db";
+import { addWalkIn, listQueue, setAppointmentStatus, setQueueStatus } from "@/lib/api/practice";
+import { friendlyError } from "@/lib/api/messages";
 import { useNow, useQuery } from "@/local/hooks";
 
 interface QRow { id: string; display_name: string; phone: string | null; status: "waiting" | "in_consultation" | "done" | "cancelled"; urgency: string; source: string; joined_at: Date; called_at: Date | null; completed_at: Date | null; appointment_id: string | null }
+
+/** Timestamps arrive as Date from the browser database and as an ISO string from the API. */
+const asDate = <T extends Date | null>(v: Date | string | null | undefined): T =>
+  (v == null ? null : v instanceof Date ? v : new Date(v)) as T;
 
 const waitText = (d: Date, now: number) => { const m = Math.max(0, Math.round((now - d.getTime()) / 60000)); return m < 1 ? "just now" : m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min`; };
 
@@ -28,7 +33,25 @@ export default function QueuePage() {
   const joinUrl = origin && os.practice ? `${origin}/patient/join/${os.practice.slug}` : "";
   useEffect(() => { if (joinUrl) QRCode.toDataURL(joinUrl, { margin: 1, width: 360, color: { dark: "#14364b", light: "#ffffff" } }).then(setQr, () => setQr("")); }, [joinUrl]);
 
-  const rows = useQuery(() => query<QRow>(os.uid, "select id, display_name, phone, status::text, urgency, source, joined_at, called_at, completed_at, appointment_id from public.queue_entries where practice_id = $1 and (status in ('waiting','in_consultation') or completed_at > now() - interval '6 hours') order by seq", [pid]), [pid, os.uid], { enabled: !!pid, poll: 4000 });
+  const rows = useQuery(
+    () =>
+      listQueue(os.uid, pid, 6).then((r) =>
+        r.map<QRow>((e) => ({
+          id: e.entry_id,
+          display_name: e.display_name ?? "",
+          phone: e.phone,
+          status: (e.status ?? "waiting") as QRow["status"],
+          urgency: e.urgency ?? "routine",
+          source: e.source ?? "walk_in",
+          joined_at: asDate(e.joined_at),
+          called_at: asDate(e.called_at),
+          completed_at: asDate(e.completed_at),
+          appointment_id: e.appointment_id,
+        })),
+      ),
+    [pid, os.uid],
+    { enabled: !!pid, poll: 4000 },
+  );
   const today = todayKey();
   const arrivals = useQuery(() => loadEvents(os.uid, pid, dayStart(today), dayStart(addDaysKey(today, 1))).then((r) => r.filter((e) => ["booked", "confirmed"].includes(e.status) && e.starts_at.getTime() < Date.now() + 2 * 3600_000 && e.ends_at.getTime() > Date.now() - 30 * 60_000)), [pid, os.uid, today], { enabled: !!pid, poll: 10000 });
 
@@ -37,7 +60,7 @@ export default function QueuePage() {
   const done = (rows.data ?? []).filter((r) => r.status === "done").slice(-8).reverse();
 
   async function set(id: string, status: string, ok: string) {
-    try { await mutate(os.uid, "select public.queue_set_status($1, $2::public.queue_status)", [id, status]); toast(ok); } catch (e) { toast(friendlyError(e)); }
+    try { await setQueueStatus(os.uid, pid, id, status); toast(ok); } catch (e) { toast(friendlyError(e)); }
   }
   const waits = waiting.map((w) => (now - w.joined_at.getTime()) / 60000);
   const avgWait = waits.length ? Math.round(waits.reduce((a, b) => a + b, 0) / waits.length) : 0;
@@ -67,7 +90,7 @@ export default function QueuePage() {
               <div key={e.id} className="a-card flat" style={{ padding: "10px 12px", display: "flex", gap: 12, alignItems: "center" }}>
                 <Avatar name={e.client} size={34} />
                 <span><b style={{ color: "var(--deep)", fontSize: 14 }}>{e.client}</b><br /><span style={{ fontSize: 12.5, color: "var(--ink-3)" }}>{fmtTime(e.starts_at)} · {e.practitioner}</span></span>
-                <Btn className="soft sm" onClick={async () => { try { await mutate(os.uid, "select public.set_appointment_status($1, 'checked_in')", [e.id]); toast(`${e.client} checked in`); } catch (x) { toast(friendlyError(x)); } }}><DoorOpen size={14} /> Arrived</Btn>
+                <Btn className="soft sm" onClick={async () => { try { await setAppointmentStatus(os.uid, pid, e.id, "checked_in"); toast(`${e.client} checked in`); } catch (x) { toast(friendlyError(x)); } }}><DoorOpen size={14} /> Arrived</Btn>
               </div>
             ))}
           </div>
@@ -138,7 +161,11 @@ function AddWalkIn({ onClose }: { onClose: () => void }) {
   const [error, setError] = useState("");
   async function save() {
     setBusy(true);
-    try { await mutate(os.uid, "select public.queue_add_walkin($1, $2, $3, $4)", [os.practice!.id, name, phone, urgency]); toast(`${name.trim()} added to the queue`); onClose(); } catch (e) { setError(friendlyError(e)); setBusy(false); }
+    try {
+      await addWalkIn(os.uid, os.practice!.id, { name: name.trim(), phone: phone.trim() || null, urgency });
+      toast(`${name.trim()} added to the queue`);
+      onClose();
+    } catch (e) { setError(friendlyError(e)); setBusy(false); }
   }
   return (
     <Sheet title="Add walk-in" sub="They join the back of the queue." onClose={onClose} size="narrow" footer={<><button className="a-btn ghost" onClick={onClose}>Cancel</button><Btn className="primary" loading={busy} onClick={save}>Add to queue</Btn></>}>

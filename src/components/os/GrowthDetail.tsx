@@ -8,7 +8,22 @@ import { useOs } from "@/components/os/OsContext";
 import { useToast } from "@/components/ui";
 import { fmtDayMonth, fmtTime, money, relativeDay } from "@/lib/format";
 import { G_STATUS, MAX_FILE, OPERATOR_ACTIONS, OWNER_ACTIONS, PIPELINE, fileSize } from "@/lib/growth";
-import { friendlyError, mutate, query } from "@/local/db";
+import {
+  addApproval,
+  addAsset,
+  createReport,
+  decideApproval,
+  getRequest,
+  listApprovals,
+  listAssets,
+  listReports,
+  listUpdates,
+  postUpdate,
+  setRequestStatus,
+  type MarketingStatus,
+} from "@/lib/api/growth";
+import { friendlyError } from "@/lib/api/messages";
+import { getApiBaseUrl, hasRemoteApi } from "@/lib/api/http";
 import { useQuery } from "@/local/hooks";
 
 interface Req { id: string; practice_id: string; practice_name: string; service_name: string; created_by: string; title: string; brief: string; budget_min_cents: number | null; budget_max_cents: number | null; deadline: Date | null; status: string; created_at: Date; updated_at: Date }
@@ -21,12 +36,99 @@ export function GrowthDetail({ id, mode }: { id: string; mode: "owner" | "operat
   const os = useOs();
   const toast = useToast();
   const [tab, setTab] = useState<"overview" | "updates" | "approvals" | "files" | "reports">("overview");
-  const req = useQuery(() => query<Req>(os.uid, `select r.id, r.practice_id, coalesce((select i.practice_name from public.marketing_inbox() i where i.id = r.id), (select p.name from public.practices p where p.id = r.practice_id), '') practice_name, s.name service_name, r.created_by, r.title, r.brief, r.budget_min_cents, r.budget_max_cents, r.deadline, r.status::text, r.created_at, r.updated_at
-      from public.marketing_requests r join public.marketing_services s on s.id = r.service_id where r.id = $1`, [id]).then((r) => r[0] ?? null), [id, os.uid], { poll: 8000 });
-  const upds = useQuery(() => query<Upd>(os.uid, "select id, author_id, body, created_at from public.campaign_updates where request_id = $1 order by created_at", [id]), [id, os.uid], { poll: 8000 });
-  const apprs = useQuery(() => query<Appr>(os.uid, "select id, item, status, comment, decided_at, created_at from public.marketing_approvals where request_id = $1 order by created_at", [id]), [id, os.uid], { poll: 8000 });
-  const assets = useQuery(() => query<Asset>(os.uid, "select id, kind, file_name, mime, size_bytes, created_at, uploaded_by from public.marketing_assets where request_id = $1 order by created_at", [id]), [id, os.uid]);
-  const reps = useQuery(() => query<Rep>(os.uid, "select id, period, summary, metrics, created_at from public.campaign_reports where request_id = $1 order by created_at desc", [id]), [id, os.uid]);
+  // A three-way coalesce over `marketing_inbox`, `practices` and a join replaced by the one
+  // procedure written for this screen. `_require_request_access` decides who may read it, so an
+  // operator sees a request without being a member of the practice that owns it.
+  const req = useQuery(
+    () =>
+      getRequest(os.uid, id).then((x) =>
+        x
+          ? ({
+              id: x.request_id,
+              practice_id: x.practice_id,
+              practice_name: x.practice_name ?? "",
+              service_name: x.service_name ?? "",
+              created_by: x.created_by ?? "",
+              title: x.title ?? "",
+              brief: x.brief ?? "",
+              budget_min_cents: x.budget_min_cents,
+              budget_max_cents: x.budget_max_cents,
+              deadline: x.deadline as Req["deadline"],
+              status: x.status ?? "draft",
+              created_at: x.created_at instanceof Date ? x.created_at : new Date(String(x.created_at)),
+              updated_at: x.updated_at instanceof Date ? x.updated_at : new Date(String(x.updated_at)),
+            } as Req)
+          : null,
+      ),
+    [id, os.uid],
+    { poll: 8000 },
+  );
+  const upds = useQuery(
+    () =>
+      listUpdates(os.uid, id).then((r) =>
+        r.map<Upd>((x) => ({
+          id: x.update_id,
+          author_id: x.author_id ?? "",
+          body: x.body ?? "",
+          created_at: x.created_at instanceof Date ? x.created_at : new Date(String(x.created_at)),
+        })),
+      ),
+    [id, os.uid],
+    { poll: 8000 },
+  );
+  const apprs = useQuery(
+    () =>
+      listApprovals(os.uid, id).then((r) =>
+        r.map<Appr>((x) => ({
+          id: x.approval_id,
+          item: x.item ?? "",
+          status: (x.status ?? "pending") as Appr["status"],
+          comment: x.comment,
+          decided_at: x.decided_at as Appr["decided_at"],
+          created_at: x.created_at instanceof Date ? x.created_at : new Date(String(x.created_at)),
+        })),
+      ),
+    [id, os.uid],
+    { poll: 8000 },
+  );
+  // Metadata only: the `bytea` column is never part of a list response.
+  const assets = useQuery(
+    () =>
+      listAssets(os.uid, id).then((r) =>
+        r.map<Asset>((x) => ({
+          id: x.asset_id,
+          kind: x.kind ?? "brief_asset",
+          file_name: x.file_name ?? "",
+          mime: x.mime,
+          size_bytes: x.size_bytes,
+          created_at: x.created_at instanceof Date ? x.created_at : new Date(String(x.created_at)),
+          uploaded_by: x.uploaded_by ?? "",
+        })),
+      ),
+    [id, os.uid],
+  );
+  // `growth_reports_list` returns one row per metric; group them back into reports.
+  const reps = useQuery(
+    () =>
+      listReports(os.uid, id).then((rows) => {
+        const byReport = new Map<string, Rep>();
+        for (const x of rows) {
+          const key = x.report_id;
+          if (!byReport.has(key)) {
+            byReport.set(key, {
+              id: key,
+              period: x.period ?? "",
+              summary: x.summary ?? "",
+              metrics: {},
+              created_at: x.created_at instanceof Date ? x.created_at : new Date(String(x.created_at)),
+            });
+          }
+          if (x.metric_key) byReport.get(key)!.metrics[x.metric_key] = x.metric_value ?? 0;
+        }
+        return [...byReport.values()];
+      }),
+    [id, os.uid],
+  );
 
   const r = req.data;
   if (req.loading && req.data === undefined) return <div className="a-card pad"><div className="a-skel" style={{ height: 320 }} /></div>;
@@ -39,7 +141,7 @@ export function GrowthDetail({ id, mode }: { id: string; mode: "owner" | "operat
 
   async function move(to: string, confirm?: string) {
     if (confirm && !window.confirm(confirm)) return;
-    try { await mutate(os.uid, "select public.marketing_set_status($1, $2::public.marketing_status)", [id, to]); toast(`Status: ${G_STATUS[to].label}`); } catch (e) { toast(friendlyError(e)); }
+    try { await setRequestStatus(os.uid, id, to as MarketingStatus); toast(`Status: ${G_STATUS[to].label}`); req.reload(); } catch (e) { toast(friendlyError(e)); }
   }
   const pendingAppr = (apprs.data ?? []).filter((a) => a.status === "pending").length;
 
@@ -99,7 +201,7 @@ function Updates({ id, items, author, canPost }: { id: string; items: Upd[]; aut
   async function post() {
     if (!text.trim()) return;
     setBusy(true);
-    try { await mutate(os.uid, "insert into public.campaign_updates (request_id, author_id, body) values ($1, $2, $3)", [id, os.uid, text.trim()]); setText(""); } catch (e) { toast(friendlyError(e)); } finally { setBusy(false); }
+    try { await postUpdate(os.uid, id, text.trim()); setText(""); } catch (e) { toast(friendlyError(e)); } finally { setBusy(false); }
   }
   return (
     <div style={{ maxWidth: 760, display: "flex", flexDirection: "column", gap: 14 }}>
@@ -126,10 +228,13 @@ function Approvals({ id, items, mode }: { id: string; items: Appr[]; mode: "owne
   const [item, setItem] = useState("");
   const [comments, setComments] = useState<Record<string, string>>({});
   async function add() {
-    try { await mutate(os.uid, "insert into public.marketing_approvals (request_id, item) values ($1, $2)", [id, item.trim()]); setItem(""); toast("Sent for approval"); } catch (e) { toast(friendlyError(e)); }
+    try { await addApproval(os.uid, id, item.trim()); setItem(""); toast("Sent for approval"); } catch (e) { toast(friendlyError(e)); }
   }
   async function decide(aid: string, status: string) {
-    try { await mutate(os.uid, "select public.decide_approval($1, $2, $3)", [aid, status, comments[aid] ?? null]); toast(status === "approved" ? "Approved" : "Changes requested"); } catch (e) { toast(friendlyError(e)); }
+    try {
+      await decideApproval(os.uid, aid, status as "approved" | "changes_requested", comments[aid] ?? null);
+      toast(status === "approved" ? "Approved" : "Changes requested");
+    } catch (e) { toast(friendlyError(e)); }
   }
   return (
     <div style={{ maxWidth: 760, display: "flex", flexDirection: "column", gap: 14 }}>
@@ -167,16 +272,39 @@ function Files({ id, items, mode, author }: { id: string; items: Asset[]; mode: 
     try {
       for (const f of Array.from(files)) {
         if (f.size > MAX_FILE) { toast(`${f.name} is over 2 MB`); continue; }
-        const bytes = new Uint8Array(await f.arrayBuffer());
-        await mutate(os.uid, "insert into public.marketing_assets (request_id, uploaded_by, kind, file_name, mime, size_bytes, content) values ($1, $2, $3, $4, $5, $6, $7)", [id, os.uid, mode === "owner" ? "brief_asset" : "deliverable", f.name, f.type || null, f.size, bytes]);
+        // No declared size is sent: the API measures the bytes it read and the database guards
+        // on `octet_length` (F-13). Who may upload which `kind` is the procedure's decision.
+        await addAsset(os.uid, id, f, mode === "owner" ? "brief_asset" : "deliverable");
       }
       toast("Uploaded");
     } catch (e) { toast(friendlyError(e)); } finally { setBusy(false); if (input.current) input.current.value = ""; }
   }
+  /**
+   * Download an asset.
+   *
+   * Remote mode fetches the API route, which serves the bytes as an `attachment` with `nosniff`
+   * and an allowlisted media type — an uploaded `text/html` comes back as
+   * `application/octet-stream` rather than running on the API origin. The blob is built from
+   * what the server declared, not from the row the uploader wrote.
+   */
   async function download(a: Asset) {
-    const [row] = await query<{ content: Uint8Array }>(os.uid, "select content from public.marketing_assets where id = $1", [a.id]);
-    const url = URL.createObjectURL(new Blob([row.content as BlobPart], { type: a.mime ?? "application/octet-stream" }));
-    const el = document.createElement("a"); el.href = url; el.download = a.file_name; el.click(); URL.revokeObjectURL(url);
+    if (hasRemoteApi()) {
+      const res = await fetch(`${getApiBaseUrl()}/v1/growth/assets/${a.id}/content`, {
+        headers: { authorization: `Bearer ${os.uid}` },
+        cache: "no-store",
+      });
+      if (!res.ok) { toast("Could not download that file"); return; }
+      const url = URL.createObjectURL(await res.blob());
+      const el = document.createElement("a"); el.href = url; el.download = a.file_name; el.click(); URL.revokeObjectURL(url);
+      return;
+    }
+
+    const { query } = await import("@/local/db");
+    const [row] = await query<{ file_name: string; mime: string | null; content: Uint8Array }>(
+      os.uid, "select * from public.growth_asset_download($1)", [a.id]);
+    if (!row) { toast("Could not download that file"); return; }
+    const url = URL.createObjectURL(new Blob([row.content as BlobPart], { type: row.mime ?? "application/octet-stream" }));
+    const el = document.createElement("a"); el.href = url; el.download = row.file_name || a.file_name; el.click(); URL.revokeObjectURL(url);
   }
   const groups = [["Your brief assets", items.filter((a) => a.kind === "brief_asset")], ["Deliverables library", items.filter((a) => a.kind === "deliverable")]] as const;
   return (
@@ -206,7 +334,13 @@ function Reports({ id, items, mode }: { id: string; items: Rep[]; mode: "owner" 
     setBusy(true);
     try {
       const metrics = Object.fromEntries(f.metrics.filter((m) => m.k.trim() && m.v.trim()).map((m) => [m.k.trim(), Number.isFinite(Number(m.v)) ? Number(m.v) : m.v.trim()]));
-      await mutate(os.uid, "insert into public.campaign_reports (request_id, period, summary, metrics, created_by) values ($1, $2, $3, $4::jsonb, $5)", [id, f.period.trim(), f.summary.trim(), JSON.stringify(metrics), os.uid]);
+      // An unrecognised metric key is `400 metric_unknown` from the procedure, which names the
+      // offending key — the browser no longer decides what a valid metric is.
+      await createReport(os.uid, id, {
+        period: f.period.trim(),
+        summary: f.summary.trim(),
+        metrics: metrics as Record<string, number>,
+      });
       setF({ period: "", summary: "", metrics: [{ k: "", v: "" }] }); toast("Report added");
     } catch (e) { toast(friendlyError(e)); } finally { setBusy(false); }
   }

@@ -7,7 +7,7 @@ import { Badge, Empty, Notice } from "@/components/app/primitives";
 import { useOs } from "@/components/os/OsContext";
 import { fmtDayMonth, relativeDay } from "@/lib/format";
 import { G_STATUS } from "@/lib/growth";
-import { query } from "@/local/db";
+import { getInbox } from "@/lib/api/growth";
 import { useQuery } from "@/local/hooks";
 
 interface Row { id: string; practice_name: string; service_name: string; title: string; status: string; deadline: Date | null; updated_at: Date }
@@ -23,7 +23,23 @@ const COLUMNS: [string, string[]][] = [
 export default function OperatorPage() {
   const os = useOs();
   const [view, setView] = useState<"board" | "list">("board");
-  const q = useQuery(() => query<Row>(os.uid, "select id, practice_name, service_name, title, status::text, deadline, updated_at from public.marketing_inbox()"), [os.uid], { poll: 8000 });
+  // `growth_inbox` refuses anyone who is not a marketing operator, in the procedure.
+  const q = useQuery(
+    () =>
+      getInbox(os.uid).then((r) =>
+        r.map<Row>((x) => ({
+          id: x.request_id,
+          practice_name: x.practice_name ?? "",
+          service_name: x.service_name ?? "",
+          title: x.title ?? "",
+          status: x.status ?? "submitted",
+          deadline: x.deadline as Row["deadline"],
+          updated_at: x.updated_at instanceof Date ? x.updated_at : new Date(String(x.updated_at)),
+        })),
+      ),
+    [os.uid],
+    { poll: 8000 },
+  );
   const rows = q.data ?? [];
 
   if (os.platformRole !== "marketing_operator" && os.platformRole !== "platform_admin") {

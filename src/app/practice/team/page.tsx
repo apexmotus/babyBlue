@@ -8,7 +8,25 @@ import { OwnerOnly } from "@/components/os/OwnerOnly";
 import { useToast } from "@/components/ui";
 import { fmtDayMonth, todayKey } from "@/lib/format";
 import { ROLE_LABEL, loadPractitioners, loadServices, type Prac } from "@/lib/os-data";
-import { friendlyError, mutate, query } from "@/local/db";
+import {
+  addMember,
+  addTimeOff,
+  createPractitioner,
+  listAvailability,
+  listMembers,
+  listPractitionerServices,
+  listRegistrations,
+  listTimeOff,
+  removeMember,
+  removeTimeOff,
+  setAvailability,
+  setMemberRole,
+  setPractitionerServices,
+  submitRegistration,
+  updatePractitioner,
+  type PracticeRole,
+} from "@/lib/api/practice";
+import { friendlyError } from "@/lib/api/messages";
 import { useQuery } from "@/local/hooks";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -72,7 +90,12 @@ function AddPractitioner({ onClose, onCreated }: { onClose: () => void; onCreate
     if (f.name.trim().length < 2 || !f.speciality.trim()) return setError("Enter a name and a speciality.");
     setBusy(true);
     try {
-      const [r] = await mutate<{ id: string }>(os.uid, "insert into public.practitioners (practice_id, display_name, title, speciality, bio, languages) values ($1, $2, nullif($3, ''), $4, '', array['English']) returning id", [os.practice!.id, f.name.trim(), f.title.trim(), f.speciality.trim()]);
+      const id = await createPractitioner(os.uid, os.practice!.id, {
+        display_name: f.name.trim(),
+        title: f.title.trim() || null,
+        speciality_slug: f.speciality.trim() || null,
+      });
+      const r = { id };
       toast("Practitioner added. Now set their services and hours.");
       onCreated(r.id);
     } catch (e) { setError(friendlyError(e)); setBusy(false); }
@@ -119,8 +142,14 @@ function ProfileTab({ p }: { p: Prac }) {
     if (f.name.trim().length < 2) return toast("Enter a name");
     setBusy(true);
     try {
-      await mutate(os.uid, "update public.practitioners set display_name = $2, title = nullif($3, ''), speciality = $4, bio = $5, languages = $6, listing_status = $7 where id = $1",
-        [p.id, f.name.trim(), f.title.trim(), f.speciality.trim(), f.bio.trim(), f.langs.split(",").map((x) => x.trim()).filter(Boolean), f.listing]);
+      await updatePractitioner(os.uid, os.practice!.id, p.id, {
+        display_name: f.name.trim(),
+        title: f.title.trim() || null,
+        speciality_slug: f.speciality.trim() || null,
+        bio: f.bio.trim() || null,
+        languages: f.langs.split(",").map((x) => x.trim()).filter(Boolean),
+        listing_status: f.listing as "listed" | "unlisted",
+      });
       toast("Profile saved");
     } catch (e) { toast(friendlyError(e)); } finally { setBusy(false); }
   }
@@ -148,11 +177,14 @@ function ServicesTab({ p }: { p: Prac }) {
   const os = useOs();
   const toast = useToast();
   const svcs = useQuery(() => loadServices(os.uid, os.practice!.id), [os.practice?.id, os.uid]);
-  const links = useQuery(() => query<{ service_id: string }>(os.uid, "select service_id from public.practitioner_services where practitioner_id = $1", [p.id]), [p.id, os.uid]);
+  const links = useQuery(() => listPractitionerServices(os.uid, os.practice!.id, p.id), [p.id, os.practice?.id, os.uid]);
   async function toggle(sid: string, on: boolean) {
     try {
-      if (on) await mutate(os.uid, "insert into public.practitioner_services (practitioner_id, service_id, practice_id) values ($1, $2, $3) on conflict do nothing", [p.id, sid, os.practice!.id]);
-      else await mutate(os.uid, "delete from public.practitioner_services where practitioner_id = $1 and service_id = $2", [p.id, sid]);
+      // The procedure takes the whole set, so the toggle sends the new set rather than an
+      // insert or a delete of one row.
+      const now = new Set((links.data ?? []).map((l) => l.service_id));
+      if (on) now.add(sid); else now.delete(sid);
+      await setPractitionerServices(os.uid, os.practice!.id, p.id, [...now]);
     } catch (e) { toast(friendlyError(e)); }
   }
   const has = new Set((links.data ?? []).map((l) => l.service_id));
@@ -173,7 +205,13 @@ function ServicesTab({ p }: { p: Prac }) {
 function HoursTab({ p }: { p: Prac }) {
   const os = useOs();
   const toast = useToast();
-  const rules = useQuery(() => query<{ weekday: number; s: string; e: string }>(os.uid, "select weekday, start_time::text s, end_time::text e from public.availability_rules where practitioner_id = $1 order by weekday, start_time", [p.id]), [p.id, os.uid]);
+  const rules = useQuery(
+    () =>
+      listAvailability(os.uid, os.practice!.id, p.id).then((r) =>
+        r.map((x) => ({ weekday: x.weekday, s: x.start_time ?? "", e: x.end_time ?? "" })),
+      ),
+    [p.id, os.practice?.id, os.uid],
+  );
   const [days, setDays] = useState<Range[][] | null>(null);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
@@ -192,9 +230,14 @@ function HoursTab({ p }: { p: Prac }) {
     setBusy(true);
     try {
       const flat = current.flatMap((rs, d) => rs.map((r) => [d, r.s, r.e] as const));
-      await mutate(os.uid, `with d as (delete from public.availability_rules where practitioner_id = $1)
-        insert into public.availability_rules (practice_id, practitioner_id, weekday, start_time, end_time) select $2, $1, x.wd, x.s::time, x.e::time from unnest($3::int[], $4::text[], $5::text[]) as x(wd, s, e)`,
-        [p.id, os.practice!.id, flat.map((x) => x[0]), flat.map((x) => x[1]), flat.map((x) => x[2])]);
+      // The three arrays are read positionally by the procedure, so they are built together.
+      // One call replaces the delete-then-insert that ran from the browser;
+      // `overlapping_availability` and `invalid_range` are the procedure's to raise.
+      await setAvailability(os.uid, os.practice!.id, p.id, {
+        weekdays: flat.map((x) => x[0]),
+        starts: flat.map((x) => x[1]),
+        ends: flat.map((x) => x[2]),
+      });
       toast("Weekly hours saved");
     } catch (e) { toast(friendlyError(e)); } finally { setBusy(false); }
   }
@@ -228,7 +271,18 @@ function HoursTab({ p }: { p: Prac }) {
 function LeaveTab({ p }: { p: Prac }) {
   const os = useOs();
   const toast = useToast();
-  const off = useQuery(() => query<{ id: string; a: Date; b: Date; reason: string | null }>(os.uid, "select id, lower(during) a, upper(during) b, reason from public.time_off where practitioner_id = $1 and upper(during) > now() order by lower(during)", [p.id]), [p.id, os.uid]);
+  const off = useQuery(
+    () =>
+      listTimeOff(os.uid, os.practice!.id, p.id, new Date()).then((r) =>
+        r.map((x) => ({
+          id: x.timeoff_id,
+          a: x.starts_at instanceof Date ? x.starts_at : new Date(String(x.starts_at)),
+          b: x.ends_at instanceof Date ? x.ends_at : new Date(String(x.ends_at)),
+          reason: x.reason,
+        })),
+      ),
+    [p.id, os.practice?.id, os.uid],
+  );
   const [from, setFrom] = useState(todayKey());
   const [to, setTo] = useState(todayKey());
   const [reason, setReason] = useState("");
@@ -237,7 +291,14 @@ function LeaveTab({ p }: { p: Prac }) {
     if (to < from) return toast("The end date must be on or after the start date");
     setBusy(true);
     try {
-      await mutate(os.uid, "insert into public.time_off (practice_id, practitioner_id, during, reason) values ($1, $2, tstzrange(($3 || 'T00:00:00+02:00')::timestamptz, (($4::date + 1)::text || 'T00:00:00+02:00')::timestamptz), nullif($5, ''))", [os.practice!.id, p.id, from, to, reason.trim()]);
+      // The hard-coded +02:00 is gone: `practice_timeoff_add` builds the window in the
+      // practice's own timezone, so a practice in Africa/Lagos gets Lagos days.
+      await addTimeOff(os.uid, os.practice!.id, {
+        practitioner_id: p.id,
+        from,
+        to,
+        reason: reason.trim() || null,
+      });
       toast("Leave added. Those days are blocked for booking.");
       setReason("");
     } catch (e) { toast(friendlyError(e)); } finally { setBusy(false); }
@@ -257,7 +318,7 @@ function LeaveTab({ p }: { p: Prac }) {
         <div key={o.id} style={{ display: "flex", gap: 12, alignItems: "center", padding: "10px 0", borderTop: "1px solid var(--line-2)" }}>
           <CalendarOff size={18} color="#b4332c" />
           <span style={{ flex: 1 }}><b style={{ color: "var(--deep)" }}>{fmtDayMonth(o.a)} – {fmtDayMonth(new Date(o.b.getTime() - 1))}</b><br /><span style={{ fontSize: 13, color: "var(--ink-3)" }}>{o.reason ?? "Leave"}</span></span>
-          <button className="a-btn ghost sm" onClick={async () => { await mutate(os.uid, "delete from public.time_off where id = $1", [o.id]); toast("Leave removed"); }}>Remove</button>
+          <button className="a-btn ghost sm" onClick={async () => { try { await removeTimeOff(os.uid, os.practice!.id, o.id); toast("Leave removed"); } catch (e) { toast(friendlyError(e)); } }}>Remove</button>
         </div>
       ))}
       {off.data?.length === 0 && <p className="a-hint">No upcoming leave.</p>}
@@ -268,13 +329,22 @@ function LeaveTab({ p }: { p: Prac }) {
 function VerifyTab({ p }: { p: Prac }) {
   const os = useOs();
   const toast = useToast();
-  const reg = useQuery(() => query<{ body: string; registration_number: string }>(os.uid, "select body, registration_number from public.practitioner_registrations where practitioner_id = $1", [p.id]).then((r) => r[0] ?? null), [p.id, os.uid]);
+  const reg = useQuery(
+    () =>
+      listRegistrations(os.uid, os.practice!.id, p.id).then((r) =>
+        r[0] ? { body: r[0].body_code ?? "", registration_number: r[0].registration_number ?? "" } : null,
+      ),
+    [p.id, os.practice?.id, os.uid],
+  );
   const [body, setBody] = useState("HPCSA");
   const [num, setNum] = useState("");
   const [busy, setBusy] = useState(false);
   async function submit() {
     setBusy(true);
-    try { await mutate(os.uid, "select public.submit_verification($1, $2, $3)", [p.id, body, num]); toast("Submitted for review"); } catch (e) { toast(friendlyError(e)); } finally { setBusy(false); }
+    try {
+      await submitRegistration(os.uid, os.practice!.id, p.id, { body_code: body, number: num });
+      toast("Submitted for review");
+    } catch (e) { toast(friendlyError(e)); } finally { setBusy(false); }
   }
   return (
     <div style={{ maxWidth: 560, display: "flex", flexDirection: "column", gap: 14 }}>
@@ -296,14 +366,30 @@ interface Member { user_id: string; email: string; display_name: string | null; 
 function Staff() {
   const os = useOs();
   const toast = useToast();
-  const team = useQuery(() => query<Member>(os.uid, "select * from public.practice_team($1)", [os.practice!.id]), [os.practice?.id, os.uid]);
+  const team = useQuery(
+    () =>
+      listMembers(os.uid, os.practice!.id).then((r) =>
+        r.map<Member>((m) => ({
+          user_id: m.user_id ?? "",
+          email: m.email ?? "",
+          display_name: m.display_name,
+          role: m.role ?? "staff",
+        })),
+      ),
+    [os.practice?.id, os.uid],
+  );
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("receptionist");
   const [busy, setBusy] = useState(false);
   const rows = useMemo(() => team.data ?? [], [team.data]);
   async function add() {
     setBusy(true);
-    try { await mutate(os.uid, "select public.add_practice_member_by_email($1, $2, $3::public.practice_role)", [os.practice!.id, email, role]); toast("Added to the team"); setEmail(""); } catch (e) { toast(friendlyError(e)); } finally { setBusy(false); }
+    try {
+      await addMember(os.uid, os.practice!.id, { email, role: role as PracticeRole });
+      toast("Added to the team");
+      setEmail("");
+      team.reload();
+    } catch (e) { toast(friendlyError(e)); } finally { setBusy(false); }
   }
   return (
     <div className="os-grid even" style={{ gridTemplateColumns: "minmax(0, 1.4fr) minmax(0, 1fr)" }}>
@@ -315,10 +401,17 @@ function Staff() {
               <Avatar name={m.display_name ?? m.email} size={40} />
               <span style={{ flex: 1, minWidth: 0 }}><b style={{ color: "var(--deep)" }}>{m.display_name}</b>{m.user_id === os.uid && <span className="a-hint"> (you)</span>}<br /><span style={{ fontSize: 13, color: "var(--ink-3)" }}>{m.email}</span></span>
               <select className="a-select sm" style={{ width: 140 }} value={m.role} disabled={m.user_id === os.uid} aria-label={`Role for ${m.display_name}`}
-                onChange={async (e) => { try { await mutate(os.uid, "update public.practice_members set role = $3::public.practice_role where practice_id = $1 and user_id = $2", [os.practice!.id, m.user_id, e.target.value]); toast("Role updated"); } catch (x) { toast(friendlyError(x)); } }}>
+                onChange={async (e) => {
+                  // This used to write the practice_members row straight from the browser,
+                  // guarded only by the `disabled` attribute above — so the last owner could
+                  // demote themselves and strand the practice. `practice_member_role_set`
+                  // raises `sole_owner`, which arrives here as copy the user can act on.
+                  try { await setMemberRole(os.uid, os.practice!.id, m.user_id, e.target.value as PracticeRole); toast("Role updated"); team.reload(); }
+                  catch (x) { toast(friendlyError(x)); team.reload(); }
+                }}>
                 {Object.entries(ROLE_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
-              <button className="a-btn ghost sm" disabled={m.user_id === os.uid} onClick={async () => { try { await mutate(os.uid, "select public.remove_practice_member($1, $2)", [os.practice!.id, m.user_id]); toast("Removed"); } catch (x) { toast(friendlyError(x)); } }}>Remove</button>
+              <button className="a-btn ghost sm" disabled={m.user_id === os.uid} onClick={async () => { try { await removeMember(os.uid, os.practice!.id, m.user_id); toast("Removed"); team.reload(); } catch (x) { toast(friendlyError(x)); } }}>Remove</button>
             </div>
           ))}
         </div>

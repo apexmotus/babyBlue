@@ -6,10 +6,16 @@ import { Btn, Field, Notice } from "@/components/app/primitives";
 import { OwnerOnly } from "@/components/os/OwnerOnly";
 import { useOs } from "@/components/os/OsContext";
 import { useToast } from "@/components/ui";
-import { friendlyError, mutate, query } from "@/local/db";
+import { getSettings, listLocations, updateSettings, upsertLocation } from "@/lib/api/practice";
+import { listCities } from "@/lib/api/public";
+import { friendlyError } from "@/lib/api/messages";
 import { useQuery } from "@/local/hooks";
 
-const PROVINCES = ["Eastern Cape", "Free State", "Gauteng", "KwaZulu-Natal", "Limpopo", "Mpumalanga", "North West", "Northern Cape", "Western Cape"];
+/**
+ * Province is no longer typed in. After the 4NF change a location references a city, and the
+ * province is a property of that city — so storing it again on the practice could disagree with
+ * the city it claims to be in. Pick the city; the province follows.
+ */
 
 export default function SettingsPage() {
   return <OwnerOnly><Settings /></OwnerOnly>;
@@ -19,10 +25,38 @@ function Settings() {
   const os = useOs();
   const toast = useToast();
   const p = os.practice!;
-  const loc = useQuery(() => query<{ id: string; address: string | null; city: string | null }>(os.uid, "select id, address, city from public.locations where practice_id = $1 order by name limit 1", [p.id]).then((r) => r[0] ?? null), [p.id, os.uid]);
-  const [f, setF] = useState({ name: p.name, province: p.province ?? "", notice: String(p.min_notice_minutes), cancel: String(p.cancellation_notice_hours), address: "", city: "" });
+  const settings = useQuery(() => getSettings(os.uid, p.id), [p.id, os.uid]);
+  const locations = useQuery(() => listLocations(os.uid, p.id), [p.id, os.uid]);
+  const cities = useQuery(() => listCities(os.uid), [os.uid]);
+
+  const primary = (locations.data ?? []).find((l) => l.is_primary) ?? locations.data?.[0] ?? null;
+  const [f, setF] = useState({
+    name: p.name,
+    timezone: p.timezone,
+    notice: String(p.min_notice_minutes),
+    cancel: String(p.cancellation_notice_hours),
+    address: "",
+    cityId: "",
+  });
   const [busy, setBusy] = useState(false);
-  useEffect(() => { if (loc.data) setF((x) => ({ ...x, address: loc.data!.address ?? "", city: loc.data!.city ?? "" })); }, [loc.data]);
+
+  useEffect(() => {
+    if (settings.data) {
+      setF((x) => ({
+        ...x,
+        name: settings.data!.name ?? x.name,
+        timezone: settings.data!.timezone ?? x.timezone,
+        notice: String(settings.data!.min_notice_minutes),
+        cancel: String(settings.data!.cancellation_notice_hours),
+      }));
+    }
+  }, [settings.data]);
+
+  useEffect(() => {
+    if (primary) setF((x) => ({ ...x, address: primary.address ?? "", cityId: primary.city_id ?? "" }));
+  }, [primary?.location_id, primary?.address, primary?.city_id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const province = cities.data?.find((c) => c.city_id === f.cityId)?.province ?? settings.data?.province ?? null;
 
   async function save() {
     const notice = Number(f.notice), cancel = Number(f.cancel);
@@ -30,10 +64,25 @@ function Settings() {
     if (!(notice >= 0) || !(cancel >= 0)) return toast("Notice periods must be zero or more");
     setBusy(true);
     try {
-      await mutate(os.uid, "update public.practices set name = $2, province = nullif($3, ''), min_notice_minutes = $4, cancellation_notice_hours = $5 where id = $1", [p.id, f.name.trim(), f.province, notice, cancel]);
-      if (loc.data) await mutate(os.uid, "update public.locations set address = nullif($2, ''), city = nullif($3, ''), province = nullif($4, '') where id = $1", [loc.data.id, f.address.trim(), f.city.trim(), f.province]);
-      else await mutate(os.uid, "insert into public.locations (practice_id, name, address, city, province) values ($1, 'Main rooms', nullif($2, ''), nullif($3, ''), nullif($4, ''))", [p.id, f.address.trim(), f.city.trim(), f.province]);
+      await updateSettings(os.uid, p.id, {
+        name: f.name.trim(),
+        timezone: f.timezone,
+        min_notice_minutes: notice,
+        cancellation_notice_hours: cancel,
+      });
+
+      // One upsert whether or not the practice already has a primary location.
+      await upsertLocation(os.uid, p.id, {
+        location_id: primary?.location_id ?? null,
+        name: primary?.name ?? "Main rooms",
+        address: f.address.trim() || null,
+        city_id: f.cityId || null,
+        is_primary: true,
+      });
+
       toast("Settings saved");
+      settings.reload();
+      locations.reload();
     } catch (e) { toast(friendlyError(e)); } finally { setBusy(false); }
   }
 
@@ -46,9 +95,19 @@ function Settings() {
           <Field label="Practice name" htmlFor="n"><input id="n" className="a-input" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></Field>
           <div className="two-col" style={{ gap: 14 }}>
             <Field label="Street address" htmlFor="a"><input id="a" className="a-input" value={f.address} onChange={(e) => setF({ ...f, address: e.target.value })} /></Field>
-            <Field label="City" htmlFor="c"><input id="c" className="a-input" value={f.city} onChange={(e) => setF({ ...f, city: e.target.value })} /></Field>
+            <Field label="City" htmlFor="c" hint="Sets the province and where patients find you.">
+              <select id="c" className="a-select" value={f.cityId} onChange={(e) => setF({ ...f, cityId: e.target.value })}>
+                <option value="">Select…</option>
+                {(cities.data ?? []).map((c) => <option key={c.city_id} value={c.city_id}>{c.name}</option>)}
+              </select>
+            </Field>
           </div>
-          <Field label="Province" htmlFor="pr"><select id="pr" className="a-select" value={f.province} onChange={(e) => setF({ ...f, province: e.target.value })}><option value="">Select…</option>{PROVINCES.map((x) => <option key={x}>{x}</option>)}</select></Field>
+          <Field label="Province" htmlFor="pr" hint="Follows the city you chose.">
+            <input id="pr" className="a-input" value={province ?? ""} readOnly disabled />
+          </Field>
+          <Field label="Timezone" htmlFor="tz" hint="Booking times and leave are worked out in this zone.">
+            <input id="tz" className="a-input" value={f.timezone} onChange={(e) => setF({ ...f, timezone: e.target.value })} />
+          </Field>
           <hr className="a-divider" />
           <h2 style={{ fontSize: 18 }}>Booking rules</h2>
           <div className="two-col" style={{ gap: 14 }}>

@@ -6,11 +6,12 @@ import { Avatar, Badge, Btn, Empty, Field, Notice } from "@/components/app/primi
 import { useOs } from "@/components/os/OsContext";
 import { useToast } from "@/components/ui";
 import { fmtDayMonth, fmtTime, relativeDay } from "@/lib/format";
-import { friendlyError, mutate, query } from "@/local/db";
+import { getAuditLog, getOverview, grantRole, setPracticeStatus, setVerification } from "@/lib/api/platform";
+import { friendlyError } from "@/lib/api/messages";
 import { useQuery } from "@/local/hooks";
 
 interface Item { kind: "practice" | "practitioner"; id: string; practice_id: string; practice_name: string; label: string; detail: string; status: string; created_at: Date }
-interface Log { id: number; at: Date; action: string; entity: string; meta: Record<string, unknown>; actor_name: string | null; practice_name: string | null }
+interface Log { id: string; at: Date; action: string; entity: string; meta: Record<string, unknown>; actor_name: string | null; practice_name: string | null }
 
 const PRACTICE_TONE = { active: "good", pending: "warn", suspended: "bad" } as const;
 const VERIF_TONE = { verified: "good", pending: "warn", rejected: "bad", unverified: "neutral" } as const;
@@ -19,9 +20,42 @@ export default function AdminPage() {
   const os = useOs();
   const toast = useToast();
   const [tab, setTab] = useState<"practices" | "verification" | "roles" | "audit">("practices");
-  const ov = useQuery(() => query<Item>(os.uid, "select kind, id, practice_id, practice_name, label, detail, status, created_at from public.admin_overview()"), [os.uid], { poll: 8000 });
-  const audit = useQuery(() => query<Log>(os.uid, `select a.id, a.at, a.action, a.entity, a.meta, p.full_name actor_name, pr.name practice_name
-      from public.audit_log a left join public.profiles p on p.id = a.actor_id left join public.practices pr on pr.id = a.practice_id order by a.at desc limit 100`), [os.uid, tab], { poll: 10000 });
+  const ov = useQuery(
+    () =>
+      getOverview(os.uid).then((r) =>
+        r.map<Item>((x) => ({
+          kind: (x.kind ?? "practice") as Item["kind"],
+          id: x.id,
+          practice_id: x.practice_id ?? "",
+          practice_name: x.practice_name ?? "",
+          label: x.label ?? "",
+          detail: x.detail ?? "",
+          status: x.status ?? "",
+          created_at: x.created_at instanceof Date ? x.created_at : new Date(String(x.created_at)),
+        })),
+      ),
+    [os.uid],
+    { poll: 8000 },
+  );
+  // This query selected `profiles.full_name`, which does not exist — the column is
+  // `display_name` — so the audit tab failed at runtime. `platform_audit_log` returns the actor
+  // name itself, and pages by keyset rather than a fixed `limit 100`.
+  const audit = useQuery(
+    () =>
+      getAuditLog(os.uid, { limit: 100 }).then((r) =>
+        r.map<Log>((x) => ({
+          id: String(x.id),
+          at: x.at instanceof Date ? x.at : new Date(String(x.at)),
+          action: x.action ?? "",
+          entity: x.entity ?? "",
+          meta: (x.meta ?? {}) as Record<string, unknown>,
+          actor_name: x.actor_name,
+          practice_name: x.practice_name,
+        })),
+      ),
+    [os.uid, tab],
+    { poll: 10000 },
+  );
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("marketing_operator");
   const [busy, setBusy] = useState(false);
@@ -32,12 +66,16 @@ export default function AdminPage() {
   const practitioners = (ov.data ?? []).filter((i) => i.kind === "practitioner");
   const toReview = practitioners.filter((p) => p.status === "pending").length;
 
-  async function act(sql: string, params: unknown[], msg: string) {
-    try { await mutate(os.uid, sql, params); toast(msg); } catch (e) { toast(friendlyError(e)); }
+  async function act(fn: () => Promise<void>, msg: string) {
+    try { await fn(); toast(msg); ov.reload(); } catch (e) { toast(friendlyError(e)); }
   }
   async function grant() {
     setBusy(true);
-    try { await mutate(os.uid, "select public.grant_platform_role($1, $2::public.platform_role)", [email.trim(), role]); toast("Role granted"); setEmail(""); } catch (e) { toast(friendlyError(e)); } finally { setBusy(false); }
+    try {
+      await grantRole(os.uid, { email: email.trim(), role: role as "platform_admin" | "marketing_operator" });
+      toast("Role granted");
+      setEmail("");
+    } catch (e) { toast(friendlyError(e)); } finally { setBusy(false); }
   }
 
   return (
@@ -54,8 +92,8 @@ export default function AdminPage() {
               <Building2 size={20} color="#5a7282" />
               <span style={{ flex: 1, minWidth: 180 }}><b style={{ color: "var(--deep)" }}>{p.label}</b><br /><span className="a-hint">{p.detail || "No province"} · created {fmtDayMonth(p.created_at)}</span></span>
               <Badge tone={PRACTICE_TONE[p.status as keyof typeof PRACTICE_TONE] ?? "neutral"} dot>{p.status}</Badge>
-              {p.status !== "active" && <button className="a-btn primary sm" onClick={() => act("select public.activate_practice($1, 'active')", [p.id], `${p.label} activated`)}>Activate</button>}
-              {p.status === "active" && <button className="a-btn danger sm" onClick={() => window.confirm(`Suspend ${p.label}? It will disappear from patient search.`) && act("select public.activate_practice($1, 'suspended')", [p.id], `${p.label} suspended`)}>Suspend</button>}
+              {p.status !== "active" && <button className="a-btn primary sm" onClick={() => act(() => setPracticeStatus(os.uid, p.id, "active"), `${p.label} activated`)}>Activate</button>}
+              {p.status === "active" && <button className="a-btn danger sm" onClick={() => window.confirm(`Suspend ${p.label}? It will disappear from patient search.`) && act(() => setPracticeStatus(os.uid, p.id, "suspended", "Suspended by a platform admin"), `${p.label} suspended`)}>Suspend</button>}
             </div>
           ))}
         </div>
@@ -70,9 +108,9 @@ export default function AdminPage() {
                 <Avatar name={p.label.split(" · ")[0]} size={40} />
                 <span style={{ flex: 1, minWidth: 200 }}><b style={{ color: "var(--deep)" }}>{p.label}</b><br /><span className="a-hint">{p.practice_name} · {p.detail}</span></span>
                 <Badge tone={VERIF_TONE[p.status as keyof typeof VERIF_TONE] ?? "neutral"} dot>{p.status}</Badge>
-                {p.status !== "verified" && <button className="a-btn primary sm" onClick={() => act("select public.set_verification($1, 'verified')", [p.id], "Marked verified")}>Verify</button>}
-                {p.status === "pending" && <button className="a-btn danger sm" onClick={() => act("select public.set_verification($1, 'rejected')", [p.id], "Rejected")}>Reject</button>}
-                {p.status === "verified" && <button className="a-btn secondary sm" onClick={() => act("select public.set_verification($1, 'unverified')", [p.id], "Verification removed")}>Remove</button>}
+                {p.status !== "verified" && <button className="a-btn primary sm" onClick={() => act(() => setVerification(os.uid, p.id, "verified"), "Marked verified")}>Verify</button>}
+                {p.status === "pending" && <button className="a-btn danger sm" onClick={() => act(() => setVerification(os.uid, p.id, "rejected"), "Rejected")}>Reject</button>}
+                {p.status === "verified" && <button className="a-btn secondary sm" onClick={() => act(() => setVerification(os.uid, p.id, "unverified"), "Verification removed")}>Remove</button>}
               </div>
             ))}
           </div>

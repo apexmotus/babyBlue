@@ -8,21 +8,33 @@ import { Avatar, Badge, Btn, Empty, Field, Switch } from "@/components/app/primi
 import { useOs } from "@/components/os/OsContext";
 import { useToast } from "@/components/ui";
 import { fmtDayMonth, fmtTime, fmtWeekday, money, relativeDay } from "@/lib/format";
-import { APPT_STATUS, loadEvents, type ClientRow } from "@/lib/os-data";
-import { friendlyError, mutate, query } from "@/local/db";
+import { APPT_STATUS, loadEvents } from "@/lib/os-data";
+import {
+  getClient,
+  grantConsent,
+  listConsents,
+  setClientNotes,
+  updateClient,
+  withdrawConsent,
+} from "@/lib/api/practice";
+import { friendlyError } from "@/lib/api/messages";
 import { useQuery } from "@/local/hooks";
 
 export default function ClientDetail() {
   const { id } = useParams<{ id: string }>();
   const os = useOs();
   const toast = useToast();
-  const client = useQuery(() => query<ClientRow>(os.uid, "select * from public.clients where id = $1", [id]).then((r) => r[0] ?? null), [id, os.uid]);
+  const pid = os.practice?.id ?? "";
+  // The old query read every column of the clients table regardless of role.
+  // `practice_client_get` scopes them, and refuses outright for a client of another practice.
+  const client = useQuery(() => getClient(os.uid, pid, id), [id, pid, os.uid], { enabled: !!pid });
+  const consents = useQuery(() => listConsents(os.uid, pid, id), [id, pid, os.uid], { enabled: !!pid });
   const appts = useQuery(() => loadEvents(os.uid, os.practice!.id, new Date("2020-01-01"), new Date("2100-01-01"), true).then((r) => r.filter((e) => e.client_id === id).reverse()), [id, os.uid, os.practice?.id], { enabled: !!os.practice });
   const c = client.data;
   const [f, setF] = useState({ first: "", last: "", phone: "", email: "" });
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
-  useEffect(() => { if (c) { setF({ first: c.first_name, last: c.last_name, phone: c.phone ?? "", email: c.email ?? "" }); setNotes(c.admin_notes ?? ""); } }, [c?.id, c?.admin_notes, c?.first_name, c?.last_name, c?.phone, c?.email]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (c) { setF({ first: c.first_name ?? "", last: c.last_name ?? "", phone: c.phone ?? "", email: c.email ?? "" }); setNotes(c.admin_notes ?? ""); } }, [c?.client_id, c?.admin_notes, c?.first_name, c?.last_name, c?.phone, c?.email]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (client.loading && client.data === undefined) return <div className="a-card pad"><div className="a-skel" style={{ height: 300 }} /></div>;
   if (!c) return <div className="a-card"><Empty icon={<UserX size={28} />} title="Client not found" action={<Link href="/practice/clients" className="a-btn primary">Back to clients</Link>}>They may belong to another practice.</Empty></div>;
@@ -36,13 +48,36 @@ export default function ClientDetail() {
   async function save() {
     if (!f.first.trim()) return toast("First name is required");
     setBusy(true);
-    try { await mutate(os.uid, "update public.clients set first_name = $2, last_name = $3, phone = nullif($4, ''), email = nullif($5, '') where id = $1", [id, f.first.trim(), f.last.trim(), f.phone.trim(), f.email.trim()]); toast("Details saved"); } catch (e) { toast(friendlyError(e)); } finally { setBusy(false); }
+    try {
+      await updateClient(os.uid, pid, id, {
+        first_name: f.first.trim(),
+        last_name: f.last.trim(),
+        phone: f.phone.trim() || null,
+        email: f.email.trim() || null,
+      });
+      toast("Details saved");
+    } catch (e) { toast(friendlyError(e)); } finally { setBusy(false); }
   }
+  /**
+   * Record or withdraw consent.
+   *
+   * This used to overwrite a boolean and null the timestamp, which destroyed the evidence that
+   * consent had ever been given — and a practice has to be able to show what it was permitted to
+   * do at the time it acted (POPIA s11(3)). Granting and withdrawing now each append an event to
+   * an immutable series, and the newest event is the one that governs. The toggle looks the same;
+   * the record underneath no longer loses its own history.
+   */
   async function consent(v: boolean) {
-    try { await mutate(os.uid, "update public.clients set consent_record_storage = $2, consent_at = case when $2 then now() end where id = $1", [id, v]); toast(v ? "Consent recorded" : "Consent withdrawn"); } catch (e) { toast(friendlyError(e)); }
+    try {
+      if (v) await grantConsent(os.uid, pid, id, "record_storage", { captured_by: "practice_os", channel: "in_person" });
+      else await withdrawConsent(os.uid, pid, id, "record_storage", "Withdrawn in the Practice OS");
+      toast(v ? "Consent recorded" : "Consent withdrawn");
+      consents.reload();
+      client.reload();
+    } catch (e) { toast(friendlyError(e)); }
   }
   async function saveNotes() {
-    try { await mutate(os.uid, "update public.clients set admin_notes = nullif($2, '') where id = $1", [id, notes.trim()]); toast("Notes saved"); } catch (e) { toast(friendlyError(e)); }
+    try { await setClientNotes(os.uid, pid, id, notes.trim() || null); toast("Notes saved"); } catch (e) { toast(friendlyError(e)); }
   }
 
   return (

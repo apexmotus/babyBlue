@@ -8,7 +8,7 @@ import { OwnerOnly } from "@/components/os/OwnerOnly";
 import { useOs } from "@/components/os/OsContext";
 import { fmtDayMonth, money } from "@/lib/format";
 import { SOURCE_LABEL } from "@/lib/os-data";
-import { query } from "@/local/db";
+import { getInsights } from "@/lib/api/practice";
 import { useQuery } from "@/local/hooks";
 
 interface Insights {
@@ -27,7 +27,12 @@ export default function InsightsPage() {
 function Insights() {
   const os = useOs();
   const [weeks, setWeeks] = useState(12);
-  const q = useQuery(() => query<{ i: Insights }>(os.uid, "select public.practice_insights($1, $2) i", [os.practice!.id, weeks]).then((r) => r[0].i), [os.practice?.id, weeks, os.uid]);
+  // `practice_insights_get` wraps `practice_insights` behind a `_require_member` check and a
+  // 1-52 week guard, returning the same jsonb document.
+  const q = useQuery(
+    () => getInsights(os.uid, os.practice!.id, weeks) as unknown as Promise<Insights>,
+    [os.practice?.id, weeks, os.uid],
+  );
   const d = q.data;
   const tot = (k: "booked" | "cancelled" | "no_show" | "completed") => (d?.weekly ?? []).reduce((a, w) => a + w[k], 0);
   const scheduled = tot("booked") + tot("cancelled") + tot("no_show");

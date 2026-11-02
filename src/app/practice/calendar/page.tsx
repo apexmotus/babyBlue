@@ -6,7 +6,8 @@ import { PRAC_COLORS, useOs } from "@/components/os/OsContext";
 import { useToast } from "@/components/ui";
 import { addDaysKey, atTime, dayKey, dayStart, fmtDayMonth, fmtMonthYear, fmtTime, fmtWeekday, hhmm, minutesOfDay, startOfWeekKey, todayKey, weekdayIndex } from "@/lib/format";
 import { loadEvents, loadPractitioners, type Ev, isBabyBlue } from "@/lib/os-data";
-import { friendlyError, mutate, query } from "@/local/db";
+import { listCalendarAvailability, listCalendarTimeOff, rescheduleAppointment } from "@/lib/api/practice";
+import { friendlyError } from "@/lib/api/messages";
 import { useNow, useQuery } from "@/local/hooks";
 
 type View = "day" | "week" | "month";
@@ -28,7 +29,19 @@ export default function CalendarPage() {
   const now = useNow(60_000);
 
   const pracs = useQuery(() => loadPractitioners(os.uid, pid), [pid, os.uid], { enabled: !!pid });
-  const rules = useQuery(() => query<Rule>(os.uid, "select practitioner_id, weekday, start_time::text s, end_time::text e from public.availability_rules where practice_id = $1", [pid]), [pid, os.uid], { enabled: !!pid });
+  const rules = useQuery(
+    () =>
+      listCalendarAvailability(os.uid, pid).then((r) =>
+        r.map<Rule>((x) => ({
+          practitioner_id: x.practitioner_id ?? "",
+          weekday: x.weekday,
+          s: x.start_time ?? "00:00",
+          e: x.end_time ?? "00:00",
+        })),
+      ),
+    [pid, os.uid],
+    { enabled: !!pid },
+  );
 
   const days = useMemo(() => {
     if (view === "day") return [anchor];
@@ -40,7 +53,21 @@ export default function CalendarPage() {
   const to = dayStart(addDaysKey(days[days.length - 1], 1));
 
   const events = useQuery(() => loadEvents(os.uid, pid, from, to, showCancelled), [pid, os.uid, days[0], days[days.length - 1], showCancelled], { enabled: !!pid, poll: 20000 });
-  const timeoff = useQuery(() => query<Off>(os.uid, "select practitioner_id, lower(during) a, upper(during) b, reason from public.time_off where practice_id = $1 and during && tstzrange($2, $3)", [pid, from, to]), [pid, os.uid, days[0], days[days.length - 1]], { enabled: !!pid });
+  // `practice_calendar_timeoff` resolves the overlap against the practice's timezone rather
+  // than a range built client-side.
+  const timeoff = useQuery(
+    () =>
+      listCalendarTimeOff(os.uid, pid, from, to).then((r) =>
+        r.map<Off>((x) => ({
+          practitioner_id: x.practitioner_id ?? "",
+          a: x.starts_at instanceof Date ? x.starts_at : new Date(String(x.starts_at)),
+          b: x.ends_at instanceof Date ? x.ends_at : new Date(String(x.ends_at)),
+          reason: x.reason,
+        })),
+      ),
+    [pid, os.uid, days[0], days[days.length - 1]],
+    { enabled: !!pid },
+  );
 
   const colorIdx = useMemo(() => new Map((pracs.data ?? []).map((p, i) => [p.id, i])), [pracs.data]);
   const color = (id: string) => PRAC_COLORS[(colorIdx.get(id) ?? 0) % PRAC_COLORS.length];
@@ -87,7 +114,7 @@ export default function CalendarPage() {
       const startDay = addDaysKey(dayKey(ev.starts_at), dayShift);
       const newStart = atTime(startDay, hhmm(minutesOfDay(ev.starts_at) + minShift));
       try {
-        await mutate(os.uid, "select public.reschedule_appointment($1, $2::timestamptz)", [ev.id, newStart.toISOString()]);
+        await rescheduleAppointment(os.uid, pid, ev.id, newStart.toISOString());
         toast(`Moved to ${fmtWeekday(newStart)} ${fmtTime(newStart)}`);
       } catch (e) { toast(friendlyError(e)); }
     };

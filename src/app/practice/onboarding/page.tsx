@@ -6,9 +6,15 @@ import { Check, Rocket } from "lucide-react";
 import { Btn, Field, Notice } from "@/components/app/primitives";
 import { useOs } from "@/components/os/OsContext";
 import { Logo } from "@/components/ui";
-import { friendlyError, mutate } from "@/local/db";
+import { onboardPractice } from "@/lib/api/practice";
+import { useQuery } from "@/local/hooks";
+import { listCities } from "@/lib/api/public";
+import { friendlyError } from "@/lib/api/messages";
 
-const PROVINCES = ["Eastern Cape", "Free State", "Gauteng", "KwaZulu-Natal", "Limpopo", "Mpumalanga", "North West", "Northern Cape", "Western Cape"];
+/**
+ * Province is not asked for. A location references a city and the province is a property of that
+ * city (4NF), so asking twice invites the two to disagree.
+ */
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
 
@@ -18,15 +24,16 @@ export default function Onboarding() {
   const [step, setStep] = useState(1);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [p, setP] = useState({ name: "", slug: "", slugTouched: false, address: "", city: "", province: "Gauteng" });
+  const [p, setP] = useState({ name: "", slug: "", slugTouched: false, address: "", cityId: "" });
   const [me, setMe] = useState({ name: os.session.name, title: "", speciality: "", langs: "English", bio: "" });
   const [svc, setSvc] = useState({ name: "Consultation", mins: "30", buffer: "5", price: "" });
   const [open, setOpen] = useState<boolean[]>([true, true, true, true, true, false, false]);
+  const cities = useQuery(() => listCities(os.uid), [os.uid]);
   const [from, setFrom] = useState("08:00");
   const [to, setTo] = useState("17:00");
 
   const steps = ["Practice", "You", "First service", "Hours"];
-  const ok1 = p.name.trim().length >= 2 && p.slug.length >= 3 && p.city.trim().length >= 2;
+  const ok1 = p.name.trim().length >= 2 && p.slug.length >= 3 && p.cityId !== "";
   const ok2 = me.name.trim().length >= 2 && me.speciality.trim().length >= 2;
   const ok3 = svc.name.trim().length >= 2 && Number(svc.mins) >= 5;
   const ok4 = open.some(Boolean) && to > from;
@@ -35,14 +42,30 @@ export default function Onboarding() {
     setBusy(true);
     setError("");
     try {
-      const [{ id }] = await mutate<{ id: string }>(os.uid, "select public.create_practice($1, $2) as id", [p.name.trim(), p.slug]);
-      await mutate(os.uid, "update public.practices set province = $2 where id = $1", [id, p.province]);
-      await mutate(os.uid, "insert into public.locations (practice_id, name, address, city, province) values ($1, 'Main rooms', nullif($2, ''), $3, $4)", [id, p.address.trim(), p.city.trim(), p.province]);
-      const [pt] = await mutate<{ id: string }>(os.uid, "insert into public.practitioners (practice_id, user_id, display_name, title, speciality, bio, languages) values ($1, $2, $3, nullif($4, ''), $5, $6, $7) returning id", [id, os.uid, me.name.trim(), me.title.trim(), me.speciality.trim(), me.bio.trim(), me.langs.split(",").map((x) => x.trim()).filter(Boolean)]);
-      const [sv] = await mutate<{ id: string }>(os.uid, "insert into public.services (practice_id, name, duration_min, buffer_min, price_cents) values ($1, $2, $3, $4, $5) returning id", [id, svc.name.trim(), Number(svc.mins), Number(svc.buffer || 0), svc.price === "" ? null : Math.round(Number(svc.price) * 100)]);
-      await mutate(os.uid, "insert into public.practitioner_services values ($1, $2, $3)", [pt.id, sv.id, id]);
+      // Six browser writes became one procedure call, and that is the point rather than a
+      // tidy-up: the old sequence could fail after creating the practice and leave an account
+      // owning a practice with no practitioner, service or hours — a state the OS has no screen
+      // for. `practice_onboard` does all of it in one transaction, so it either exists complete
+      // or not at all.
       const days = open.map((o, i) => (o ? i : -1)).filter((i) => i >= 0);
-      await mutate(os.uid, "insert into public.availability_rules (practice_id, practitioner_id, weekday, start_time, end_time) select $1, $2, d, $3::time, $4::time from unnest($5::int[]) d", [id, pt.id, from, to, days]);
+      const id = await onboardPractice(os.uid, {
+        name: p.name.trim(),
+        slug: p.slug,
+        city_id: p.cityId || null,
+        address: p.address.trim() || null,
+        practitioner_name: me.name.trim(),
+        title: me.title.trim() || null,
+        speciality_slug: me.speciality.trim() || null,
+        bio: me.bio.trim() || null,
+        languages: me.langs.split(",").map((x) => x.trim()).filter(Boolean),
+        service_name: svc.name.trim(),
+        duration_min: Number(svc.mins),
+        buffer_min: Number(svc.buffer || 0),
+        price_cents: svc.price === "" ? null : Math.round(Number(svc.price) * 100),
+        weekdays: days,
+        start: from,
+        end: to,
+      });
       os.setPracticeId(id);
       router.replace("/practice");
     } catch (e) { setError(friendlyError(e)); setBusy(false); }
@@ -69,9 +92,16 @@ export default function Onboarding() {
               <Field label="Web address" htmlFor="o2" hint={`babyblue … /patient/join/${p.slug || "your-practice"}`}><input id="o2" className="a-input" value={p.slug} onChange={(e) => setP({ ...p, slug: slugify(e.target.value), slugTouched: true })} /></Field>
               <div className="two-col" style={{ gap: 14 }}>
                 <Field label="Street address" htmlFor="o3"><input id="o3" className="a-input" value={p.address} onChange={(e) => setP({ ...p, address: e.target.value })} /></Field>
-                <Field label="City" htmlFor="o4"><input id="o4" className="a-input" value={p.city} onChange={(e) => setP({ ...p, city: e.target.value })} /></Field>
+                <Field label="City" htmlFor="o4" hint="Where patients will find you.">
+                  <select id="o4" className="a-select" value={p.cityId} onChange={(e) => setP({ ...p, cityId: e.target.value })}>
+                    <option value="">Select…</option>
+                    {(cities.data ?? []).map((c) => <option key={c.city_id} value={c.city_id}>{c.name}</option>)}
+                  </select>
+                </Field>
               </div>
-              <Field label="Province" htmlFor="o5"><select id="o5" className="a-select" value={p.province} onChange={(e) => setP({ ...p, province: e.target.value })}>{PROVINCES.map((x) => <option key={x}>{x}</option>)}</select></Field>
+              <Field label="Province" htmlFor="o5" hint="Follows the city you chose.">
+                <input id="o5" className="a-input" value={cities.data?.find((c) => c.city_id === p.cityId)?.province ?? ""} readOnly disabled />
+              </Field>
             </>
           )}
           {step === 2 && (

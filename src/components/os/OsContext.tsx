@@ -1,12 +1,48 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { query } from "@/local/db";
+import { getPlatformRole, listMemberships, type MembershipRow } from "@/lib/api/practice";
 import { useSession, type Session } from "@/local/auth";
 import { useQuery } from "@/local/hooks";
 
-export type PracticeRole = "practice_owner" | "practitioner" | "receptionist" | "staff";
-export interface PracticeRef { id: string; name: string; slug: string; status: "pending" | "active" | "suspended"; province: string | null; role: PracticeRole; min_notice_minutes: number; cancellation_notice_hours: number }
+export type { PracticeRole } from "@/lib/api/practice";
+import type { PracticeRole } from "@/lib/api/practice";
+
+export interface PracticeRef {
+  id: string;
+  name: string;
+  slug: string;
+  status: "pending" | "active" | "suspended";
+  province: string | null;
+  role: PracticeRole;
+  min_notice_minutes: number;
+  cancellation_notice_hours: number;
+  /** The practice's own IANA zone. Date arithmetic belongs in the procedures, not here. */
+  timezone: string;
+  city: string | null;
+}
+
+/**
+ * `practice_memberships_list` names the key `practice_id`; the OS has always called it `id`.
+ * Mapped in one place rather than renaming the field across every screen.
+ */
+function toPracticeRef(r: MembershipRow): PracticeRef {
+  // `pg_proc` carries no nullability for `returns table` columns, so the generator types every
+  // text column as nullable. These are all NOT NULL in the schema; coalescing here keeps that
+  // assumption in one place instead of spreading `?? ""` through every screen.
+  return {
+    id: r.practice_id,
+    name: r.name ?? "",
+    slug: r.slug ?? "",
+    status: (r.status ?? "pending") as PracticeRef["status"],
+    province: r.province,
+    role: (r.role ?? "staff") as PracticeRole,
+    min_notice_minutes: r.min_notice_minutes,
+    cancellation_notice_hours: r.cancellation_notice_hours,
+    timezone: r.timezone ?? "Africa/Johannesburg",
+    city: r.city,
+  };
+}
 export interface Prefill { date?: string; time?: string; practitionerId?: string; clientId?: string }
 
 interface Ctx {
@@ -48,13 +84,13 @@ export const PRAC_COLORS = [
 
 export function OsProvider({ session, children }: { session: Session; children: ReactNode }) {
   const uid = session.userId;
+  // `practice_memberships_list()` keys on auth.uid() inside the procedure, so there is no user
+  // id to pass and no way for a caller to ask about someone else's memberships.
   const memberships = useQuery(
-    () =>
-      query<PracticeRef>(uid, `select p.id, p.name, p.slug, p.status, p.province, m.role::text as role, p.min_notice_minutes, p.cancellation_notice_hours
-        from public.practice_members m join public.practices p on p.id = m.practice_id where m.user_id = $1 order by p.name`, [uid]),
+    () => listMemberships(uid).then((rows) => rows.map(toPracticeRef)),
     [uid],
   );
-  const platform = useQuery(() => query<{ r: string | null }>(uid, "select public.my_platform_role() as r").then((x) => x[0]?.r ?? null), [uid]);
+  const platform = useQuery(() => getPlatformRole(uid), [uid]);
   const [chosen, setChosen] = useState<string | null>(null);
   const [newAppt, setNewAppt] = useState<{ open: boolean; prefill: Prefill }>({ open: false, prefill: {} });
   const [apptId, setApptId] = useState<string | null>(null);

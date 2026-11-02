@@ -10,7 +10,8 @@ import { useOs } from "@/components/os/OsContext";
 import { useToast } from "@/components/ui";
 import { relativeDay } from "@/lib/format";
 import { G_STATUS } from "@/lib/growth";
-import { friendlyError, mutate, query } from "@/local/db";
+import { createRequest, listRequests, listServices, setRequestStatus } from "@/lib/api/growth";
+import { friendlyError } from "@/lib/api/messages";
 import { useQuery } from "@/local/hooks";
 
 interface Svc { id: string; slug: string; name: string; description: string }
@@ -23,10 +24,30 @@ export default function GrowthPage() {
 function Growth() {
   const os = useOs();
   const [wizard, setWizard] = useState<Svc | null | undefined>(undefined);
-  const svcs = useQuery(() => query<Svc>(os.uid, "select id, slug, name, description from public.marketing_services where active order by name"), [os.uid]);
-  const rows = useQuery(() => query<Row>(os.uid, `select r.id, r.title, s.name service_name, r.status::text, r.updated_at,
-      (select count(*)::int from public.marketing_approvals a where a.request_id = r.id and a.status = 'pending') pending
-      from public.marketing_requests r join public.marketing_services s on s.id = r.service_id where r.practice_id = $1 order by r.updated_at desc`, [os.practice!.id]), [os.practice?.id, os.uid], { poll: 8000 });
+  const svcs = useQuery(
+    () =>
+      listServices(os.uid).then((r) =>
+        r.map<Svc>((x) => ({ id: x.service_id, slug: x.slug ?? "", name: x.name ?? "", description: x.description ?? "" })),
+      ),
+    [os.uid],
+  );
+  // `growth_requests_list` already carries the pending-approval count, so the correlated
+  // subquery is gone.
+  const rows = useQuery(
+    () =>
+      listRequests(os.uid, os.practice!.id).then((r) =>
+        r.map<Row>((x) => ({
+          id: x.request_id,
+          title: x.title ?? "",
+          service_name: x.service_name ?? "",
+          status: x.status ?? "draft",
+          updated_at: x.updated_at instanceof Date ? x.updated_at : new Date(String(x.updated_at)),
+          pending: x.pending_approvals,
+        })),
+      ),
+    [os.practice?.id, os.uid],
+    { poll: 8000 },
+  );
 
   return (
     <>
@@ -86,12 +107,19 @@ function RequestSheet({ initial, services, onClose }: { initial: Svc | null; ser
   async function save(submit: boolean) {
     setBusy(true);
     try {
-      const [r] = await mutate<{ id: string }>(os.uid, `insert into public.marketing_requests (practice_id, service_id, created_by, title, brief, budget_min_cents, budget_max_cents, deadline)
-        values ($1, $2, $3, $4, $5, $6, $7, nullif($8, '')::date) returning id`, [os.practice!.id, f.service, os.uid, f.title.trim(), f.brief.trim(), f.min === "" ? null : Math.round(Number(f.min) * 100), f.max === "" ? null : Math.round(Number(f.max) * 100), f.deadline]);
-      if (submit) await mutate(os.uid, "select public.marketing_set_status($1, 'submitted')", [r.id]);
+      const id = await createRequest(os.uid, os.practice!.id, {
+        service_id: f.service,
+        title: f.title.trim(),
+        brief: f.brief.trim(),
+        budget_min_cents: f.min === "" ? null : Math.round(Number(f.min) * 100),
+        budget_max_cents: f.max === "" ? null : Math.round(Number(f.max) * 100),
+        deadline: f.deadline || null,
+      });
+      // `draft -> submitted` is the practice's move in the procedure's state machine.
+      if (submit) await setRequestStatus(os.uid, id, "submitted");
       toast(submit ? "Request sent to the Growth team" : "Saved as draft");
       onClose();
-      router.push(`/practice/growth/${r.id}`);
+      router.push(`/practice/growth/${id}`);
     } catch (e) { toast(friendlyError(e)); setBusy(false); }
   }
 

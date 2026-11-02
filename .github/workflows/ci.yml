@@ -110,19 +110,19 @@ jobs:
       - uses: actions/checkout@v4
       - name: Gate - zero SQL in src/app and src/components
         run: |
-          # API_LAYER_SPEC §26 / Phase 3 exit gate: product UI reaches the database only
-          # through the API layer. Scoped to src/app/patient, the one surface migrated so far.
+          # API_LAYER_SPEC §26: the product UI reaches the database only through the API layer,
+          # and never touches a table directly. Now covers all of src/app and src/components.
           #
-          # NOT src/lib/api: those modules are the data-access layer and hold the deliberate
-          # PGlite fallback for the offline demo (`hasRemoteApi() === false`). Widen this to
-          # src/app/practice and src/components/os as Phases 4-5 migrate them, and to all of
-          # src/app and src/components at the Phase 5 cutover.
-          if grep -rInE '\b(select|insert into|update|delete from)\b[[:space:]].*\bfrom\b|\bfrom public\.' \
-               src/app/patient; then
-            echo "::error::Raw SQL found in src/app/patient. It belongs in a stored procedure."
+          # The rule is raw *table* access, not any mention of SQL. `from public.<name>(` is a
+          # stored procedure call, which is exactly what the UI is supposed to do in the offline
+          # demo fallback; `from public.<name>` with no parenthesis is a table and is refused.
+          # DML against a table is refused outright, since every write goes through a procedure.
+          if grep -rInE 'from[[:space:]]+public\.[a-z_]+([^a-z_(]|$)|insert[[:space:]]+into[[:space:]]+public\.|update[[:space:]]+public\.[a-z_]+[[:space:]]+set|delete[[:space:]]+from[[:space:]]+public\.' \
+               src/app src/components; then
+            echo "::error::Raw table access found in the UI. It belongs in a stored procedure."
             exit 1
           fi
-          echo "No SQL in src/app/patient"
+          echo "No raw table access in src/app or src/components"
 
       - name: Gate - no vendored package caches
         run: |

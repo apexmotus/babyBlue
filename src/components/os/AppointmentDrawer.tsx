@@ -10,7 +10,15 @@ import { useToast } from "@/components/ui";
 import { atTime, dayKey, fmtLongDate, fmtTime, money, relativeDay, todayKey } from "@/lib/format";
 import { BabyBlueTag } from "@/components/os/BabyBlueTag";
 import { APPT_STATUS, SOURCE_LABEL, isBabyBlue, type Ev } from "@/lib/os-data";
-import { friendlyError, mutate, query } from "@/local/db";
+import {
+  cancelAppointment,
+  getAppointment,
+  getAppointmentHistory,
+  listAppointmentSlots,
+  rescheduleAppointment,
+  setAppointmentStatus,
+} from "@/lib/api/practice";
+import { friendlyError } from "@/lib/api/messages";
 import { useQuery } from "@/local/hooks";
 
 const REASONS = ["Patient asked to cancel", "Practitioner unavailable", "Double booking", "Duplicate", "Other"];
@@ -24,18 +32,50 @@ export function AppointmentDrawer() {
   const [date, setDate] = useState(todayKey());
   const [time, setTime] = useState("09:00");
 
+  const asDate = (v: Date | string | null | undefined): Date =>
+    v instanceof Date ? v : new Date(String(v ?? 0));
+
   const ev = useQuery(
-    async () => {
+    async (): Promise<Ev | null> => {
       if (!apptId || !practice) return null;
-      const rows = await query<Ev>(uid, `select a.id, a.starts_at, a.ends_at, a.status::text, a.source, a.created_at, a.practitioner_id, p.display_name practitioner, a.service_id, s.name service, s.price_cents,
-          c.id client_id, trim(c.first_name || ' ' || c.last_name) client, c.phone, c.email
-        from public.appointments a join public.practitioners p on p.id = a.practitioner_id join public.services s on s.id = a.service_id join public.clients c on c.id = a.client_id where a.id = $1`, [apptId]);
-      return rows[0] ?? null;
+      const r = await getAppointment(uid, practice.id, apptId);
+      if (!r) return null;
+      return {
+        id: r.appointment_id ?? apptId,
+        starts_at: asDate(r.starts_at),
+        ends_at: asDate(r.ends_at),
+        status: r.status ?? "booked",
+        source: r.source ?? "os",
+        created_at: asDate(r.created_at),
+        practitioner_id: r.practitioner_id ?? "",
+        practitioner: r.practitioner_name ?? "",
+        service_id: r.service_id ?? "",
+        service: r.service_name ?? "",
+        price_cents: r.price_cents,
+        client_id: r.client_id ?? "",
+        client: r.client_name ?? "",
+        phone: r.client_phone,
+        email: r.client_email,
+      };
     },
     [apptId, practice?.id, uid],
     { enabled: !!apptId },
   );
-  const hist = useQuery(() => (apptId ? query<{ at: Date; action: string; actor_name: string | null; meta: Record<string, string> }>(uid, "select * from public.appointment_history($1)", [apptId]) : Promise.resolve([])), [apptId, uid], { enabled: !!apptId });
+  const hist = useQuery(
+    () =>
+      apptId && practice
+        ? getAppointmentHistory(uid, practice.id, apptId).then((r) =>
+            r.map((h) => ({
+              at: asDate(h.at),
+              action: h.action ?? "",
+              actor_name: h.actor_name,
+              meta: (h.meta ?? {}) as Record<string, string>,
+            })),
+          )
+        : Promise.resolve([]),
+    [apptId, practice?.id, uid],
+    { enabled: !!apptId },
+  );
   const e = ev.data;
 
   useEffect(() => {
@@ -43,7 +83,12 @@ export function AppointmentDrawer() {
   }, [e?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const slots = useQuery(
-    async () => (e && mode === "resched" ? query<{ starts_at: Date }>(uid, "select starts_at from public.get_available_slots($1, $2, $3::date, $3::date)", [e.practitioner_id, e.service_id, date]) : []),
+    async () =>
+      e && practice && mode === "resched"
+        ? (await listAppointmentSlots(uid, practice.id, e.practitioner_id, e.service_id, date)).map((s) => ({
+            starts_at: asDate(s.starts_at),
+          }))
+        : [],
     [e?.id, mode, date, uid],
     { enabled: !!e && mode === "resched" },
   );
@@ -55,7 +100,7 @@ export function AppointmentDrawer() {
     setBusy(key);
     try { await fn(); toast(ok); setMode("view"); } catch (err) { toast(friendlyError(err)); } finally { setBusy(""); }
   }
-  const setStatus = (s: string, ok: string) => act(s, () => mutate(uid, "select public.set_appointment_status($1, $2::public.appointment_status)", [apptId, s]), ok);
+  const setStatus = (s: string, ok: string) => act(s, () => setAppointmentStatus(uid, practice!.id, apptId!, s), ok);
 
   const st = e ? APPT_STATUS[e.status] : null;
   const live = e && ["booked", "confirmed"].includes(e.status);
@@ -96,7 +141,7 @@ export function AppointmentDrawer() {
               <b style={{ color: "var(--bad)" }}>Cancel this appointment?</b>
               <Field label="Reason" htmlFor="rs"><select id="rs" className="a-select" value={reason} onChange={(x) => setReason(x.target.value)}>{REASONS.map((r) => <option key={r}>{r}</option>)}</select></Field>
               <div style={{ display: "flex", gap: 10 }}>
-                <Btn className="danger-solid" loading={busy === "cancel"} onClick={() => act("cancel", () => mutate(uid, "select public.cancel_appointment($1, $2)", [apptId, reason]), "Appointment cancelled")}>Cancel appointment</Btn>
+                <Btn className="danger-solid" loading={busy === "cancel"} onClick={() => act("cancel", () => cancelAppointment(uid, practice!.id, apptId!, reason), "Appointment cancelled")}>Cancel appointment</Btn>
                 <Btn className="ghost" onClick={() => setMode("view")}>Keep</Btn>
               </div>
             </div>
@@ -116,7 +161,7 @@ export function AppointmentDrawer() {
               )}
               <p className="a-hint">Staff can move an appointment outside published hours, but never on top of another booking.</p>
               <div style={{ display: "flex", gap: 10 }}>
-                <Btn className="primary" loading={busy === "resched"} onClick={() => act("resched", () => mutate(uid, "select public.reschedule_appointment($1, $2::timestamptz)", [apptId, atTime(date, time).toISOString()]), "Appointment moved")}>Move appointment</Btn>
+                <Btn className="primary" loading={busy === "resched"} onClick={() => act("resched", () => rescheduleAppointment(uid, practice!.id, apptId!, atTime(date, time).toISOString()), "Appointment moved")}>Move appointment</Btn>
                 <Btn className="ghost" onClick={() => setMode("view")}>Back</Btn>
               </div>
             </div>

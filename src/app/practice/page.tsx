@@ -10,7 +10,8 @@ import { PRAC_COLORS, useOs } from "@/components/os/OsContext";
 import { useToast } from "@/components/ui";
 import { addDaysKey, dayStart, fmtLongDate, fmtTime, money, relativeDay, todayKey } from "@/lib/format";
 import { APPT_STATUS, loadBabyBlueBookings, loadEvents, loadPractitioners } from "@/lib/os-data";
-import { friendlyError, mutate, query } from "@/local/db";
+import { getDashboard, getQueuePreview, getSetupProgress, setAppointmentStatus } from "@/lib/api/practice";
+import { friendlyError } from "@/lib/api/messages";
 import { useQuery } from "@/local/hooks";
 
 interface Stats {
@@ -23,21 +24,31 @@ export default function Dashboard() {
   const os = useOs();
   const toast = useToast();
   const pid = os.practice?.id ?? "";
-  const stats = useQuery(() => query<{ s: Stats }>(os.uid, "select public.practice_stats($1) s", [pid]).then((r) => r[0].s), [pid, os.uid], { enabled: !!pid, poll: 20000 });
+  // `practice_dashboard_get` is `practice_stats` behind a `_require_member` check and returns
+  // the identical jsonb document, so the shape below is unchanged.
+  const stats = useQuery(() => getDashboard(os.uid, pid) as unknown as Promise<Stats>, [pid, os.uid], { enabled: !!pid, poll: 20000 });
   const today = todayKey();
   const agenda = useQuery(() => loadEvents(os.uid, pid, dayStart(today), dayStart(addDaysKey(today, 1))), [pid, today, os.uid], { enabled: !!pid, poll: 15000 });
   const pracs = useQuery(() => loadPractitioners(os.uid, pid), [pid, os.uid], { enabled: !!pid });
   const bb = useQuery(() => loadBabyBlueBookings(os.uid, pid), [pid, os.uid], { enabled: !!pid, poll: 15000 });
-  const queue = useQuery(() => query<{ id: string; display_name: string; urgency: string; joined_at: Date; status: string }>(os.uid, "select id, display_name, urgency, joined_at, status::text from public.queue_entries where practice_id = $1 and status in ('waiting','in_consultation') order by status desc, seq limit 5", [pid]), [pid, os.uid], { enabled: !!pid, poll: 6000 });
-  const setup = useQuery(async () => {
-    const [r] = await query<{ pracs: number; listed: number; verified: number; svcs: number; rules: number }>(os.uid,
-      `select (select count(*)::int from public.practitioners where practice_id = $1) pracs,
-              (select count(*)::int from public.practitioners where practice_id = $1 and listing_status = 'listed') listed,
-              (select count(*)::int from public.practitioners where practice_id = $1 and verification_status = 'verified') verified,
-              (select count(*)::int from public.services where practice_id = $1 and active) svcs,
-              (select count(*)::int from public.availability_rules where practice_id = $1) rules`, [pid]);
-    return r;
-  }, [pid, os.uid], { enabled: !!pid });
+  const queue = useQuery(
+    () => getQueuePreview(os.uid, pid, 5).then((rows) => rows.map((r) => ({ id: r.entry_id, display_name: r.display_name, urgency: r.urgency, joined_at: r.joined_at, status: r.status }))),
+    [pid, os.uid],
+    { enabled: !!pid, poll: 6000 },
+  );
+  // Five hand-written count subqueries replaced by the procedure written for exactly this card.
+  const setup = useQuery(
+    () =>
+      getSetupProgress(os.uid, pid).then((r) => ({
+        pracs: r?.practitioners ?? 0,
+        listed: r?.listed ?? 0,
+        verified: r?.verified ?? 0,
+        svcs: r?.services ?? 0,
+        rules: r?.availability_rules ?? 0,
+      })),
+    [pid, os.uid],
+    { enabled: !!pid },
+  );
 
   const colorOf = useMemo(() => { const m = new Map<string, number>(); (pracs.data ?? []).forEach((p, i) => m.set(p.id, i)); return (id: string) => PRAC_COLORS[(m.get(id) ?? 0) % PRAC_COLORS.length]; }, [pracs.data]);
   const s = stats.data;
@@ -48,7 +59,7 @@ export default function Dashboard() {
   const cancelRate = s && s.scheduled_30d > 0 ? Math.round((s.cancelled_30d / s.scheduled_30d) * 1000) / 10 : null;
 
   async function act(id: string, status: string, ok: string) {
-    try { await mutate(os.uid, "select public.set_appointment_status($1, $2::public.appointment_status)", [id, status]); toast(ok); } catch (e) { toast(friendlyError(e)); }
+    try { await setAppointmentStatus(os.uid, pid, id, status); toast(ok); } catch (e) { toast(friendlyError(e)); }
   }
 
   const checklist = [

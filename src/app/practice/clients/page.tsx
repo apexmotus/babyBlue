@@ -7,10 +7,15 @@ import { Avatar, Badge, Btn, Empty, Field, Notice, Sheet } from "@/components/ap
 import { useOs } from "@/components/os/OsContext";
 import { useToast } from "@/components/ui";
 import { fmtDayMonth, relativeDay } from "@/lib/format";
-import { friendlyError, mutate, query } from "@/local/db";
+import { createClient, listClients } from "@/lib/api/practice";
+import { friendlyError } from "@/lib/api/messages";
 import { useQuery } from "@/local/hooks";
 
 interface Row { id: string; name: string; phone: string | null; email: string | null; consent: boolean; last_visit: Date | null; next_appt: Date | null; visits: number; created_at: Date }
+
+/** Timestamps arrive as Date from the browser database and as an ISO string from the API. */
+const asDate = (v: Date | string | null | undefined): Date | null =>
+  v == null ? null : v instanceof Date ? v : new Date(v);
 
 export default function ClientsPage() {
   const os = useOs();
@@ -21,11 +26,27 @@ export default function ClientsPage() {
   const [add, setAdd] = useState(false);
   const [limit, setLimit] = useState(50);
 
-  const rows = useQuery(() => query<Row>(os.uid, `select c.id, trim(c.first_name || ' ' || c.last_name) name, c.phone, c.email, c.consent_record_storage consent, c.created_at,
-      (select max(a.starts_at) from public.appointments a where a.client_id = c.id and a.status = 'completed') last_visit,
-      (select min(a.starts_at) from public.appointments a where a.client_id = c.id and a.status in ('booked','confirmed','checked_in') and a.starts_at > now()) next_appt,
-      (select count(*)::int from public.appointments a where a.client_id = c.id and a.status = 'completed') visits
-    from public.clients c where c.practice_id = $1`, [pid]), [pid, os.uid], { enabled: !!pid });
+  // Four correlated subqueries replaced by `practice_clients_list`, which also scopes the
+  // visible columns by the caller's role. `q` is sent to the procedure so the search runs in
+  // the database; the client-side filter below stays for instant feedback while typing.
+  const rows = useQuery(
+    () =>
+      listClients(os.uid, pid, "", limit, 0).then((r) =>
+        r.map<Row>((c) => ({
+          id: c.client_id,
+          name: c.full_name ?? "",
+          phone: c.phone,
+          email: c.email,
+          consent: c.consent_record_storage,
+          created_at: asDate(c.consent_at) ?? new Date(0),
+          last_visit: asDate(c.last_visit),
+          next_appt: asDate(c.next_appointment),
+          visits: c.visits,
+        })),
+      ),
+    [pid, os.uid, limit],
+    { enabled: !!pid },
+  );
 
   const list = useMemo(() => {
     const n = q.trim().toLowerCase();
@@ -83,11 +104,16 @@ function AddClient({ onClose }: { onClose: () => void }) {
     if (!f.first.trim()) return setError("Enter the client's first name.");
     setBusy(true);
     try {
-      const [c] = await mutate<{ id: string }>(os.uid, "insert into public.clients (practice_id, first_name, last_name, phone, email, consent_record_storage, consent_at) values ($1, $2, $3, nullif($4, ''), nullif($5, ''), $6, case when $6 then now() end) returning id",
-        [os.practice!.id, f.first.trim(), f.last.trim(), f.phone.trim(), f.email.trim(), f.consent]);
+      const id = await createClient(os.uid, os.practice!.id, {
+        first_name: f.first.trim(),
+        last_name: f.last.trim(),
+        phone: f.phone.trim() || null,
+        email: f.email.trim() || null,
+        consent_record_storage: f.consent,
+      });
       toast("Client added");
       onClose();
-      router.push(`/practice/clients/${c.id}`);
+      router.push(`/practice/clients/${id}`);
     } catch (e) { setError(friendlyError(e)); setBusy(false); }
   }
   return (

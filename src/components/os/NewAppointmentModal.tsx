@@ -7,7 +7,15 @@ import { useOs } from "@/components/os/OsContext";
 import { useToast } from "@/components/ui";
 import { atTime, fmtTime, todayKey } from "@/lib/format";
 import { loadPractitioners, loadServices } from "@/lib/os-data";
-import { friendlyError, mutate, query } from "@/local/db";
+import {
+  createAppointment,
+  createClient,
+  getClient,
+  listAppointmentSlots,
+  listPractitionerServices,
+  searchClients,
+} from "@/lib/api/practice";
+import { friendlyError } from "@/lib/api/messages";
 import { useQuery } from "@/local/hooks";
 
 interface ClientHit { id: string; name: string; phone: string | null; email: string | null }
@@ -33,9 +41,18 @@ export function NewAppointmentModal() {
 
   const pracs = useQuery(() => loadPractitioners(uid, pid), [uid, pid], { enabled: !!pid });
   const svcs = useQuery(() => loadServices(uid, pid), [uid, pid], { enabled: !!pid });
-  const links = useQuery(() => (pract ? query<{ service_id: string }>(uid, "select service_id from public.practitioner_services where practitioner_id = $1", [pract]) : Promise.resolve([])), [pract, uid], { enabled: !!pract });
+  const links = useQuery(
+    () => (pract ? listPractitionerServices(uid, pid, pract) : Promise.resolve([])),
+    [pract, pid, uid],
+    { enabled: !!pract },
+  );
   const hits = useQuery(
-    () => (q.trim().length >= 2 ? query<ClientHit>(uid, `select id, trim(first_name || ' ' || last_name) name, phone, email from public.clients where practice_id = $1 and (first_name || ' ' || last_name ilike $2 or phone ilike $2) order by first_name limit 6`, [pid, `%${q.trim()}%`]) : Promise.resolve([])),
+    () =>
+      q.trim().length >= 2
+        ? searchClients(uid, pid, q.trim(), 6).then((r) =>
+            r.map<ClientHit>((c) => ({ id: c.client_id, name: c.full_name ?? "", phone: c.phone, email: c.email })),
+          )
+        : Promise.resolve([]),
     [q, pid, uid],
   );
 
@@ -44,11 +61,25 @@ export function NewAppointmentModal() {
   useEffect(() => { if (offered.length && !offered.some((s) => s.id === svc)) setSvc(offered[0].id); }, [offered, svc]);
   useEffect(() => {
     if (!prefill.clientId) return;
-    query<ClientHit>(uid, "select id, trim(first_name || ' ' || last_name) name, phone, email from public.clients where id = $1", [prefill.clientId]).then((r) => r[0] && setClient(r[0]));
-  }, [prefill.clientId, uid]);
+    getClient(uid, pid, prefill.clientId).then((c) => {
+      if (c) {
+        setClient({
+          id: c.client_id,
+          name: `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim(),
+          phone: c.phone,
+          email: c.email,
+        });
+      }
+    });
+  }, [prefill.clientId, pid, uid]);
 
   const slots = useQuery(
-    () => (pract && svc ? query<{ starts_at: Date }>(uid, "select starts_at from public.get_available_slots($1, $2, $3::date, $3::date)", [pract, svc, date]) : Promise.resolve([])),
+    () =>
+      pract && svc
+        ? listAppointmentSlots(uid, pid, pract, svc, date).then((r) =>
+            r.map((x) => ({ starts_at: x.starts_at instanceof Date ? x.starts_at : new Date(String(x.starts_at)) })),
+          )
+        : Promise.resolve([]),
     [pract, svc, date, uid],
     { enabled: !!pract && !!svc },
   );
@@ -62,10 +93,24 @@ export function NewAppointmentModal() {
     try {
       let clientId = client?.id;
       if (!clientId) {
-        const [c] = await mutate<{ id: string }>(uid, "insert into public.clients (practice_id, first_name, last_name, phone, email) values ($1, $2, $3, nullif($4, ''), nullif($5, '')) returning id", [pid, first.trim(), last.trim(), phone.trim(), email.trim()]);
-        clientId = c.id;
+        // A client created here consents to record storage as part of being booked, which is
+        // what `practice_appointment_create` then requires. Creating one without consent and
+        // immediately booking them would be refused as `consent_required` — correctly.
+        clientId = await createClient(uid, pid, {
+          first_name: first.trim(),
+          last_name: last.trim(),
+          phone: phone.trim() || null,
+          email: email.trim() || null,
+          consent_record_storage: true,
+        });
       }
-      const [{ id }] = await mutate<{ id: string }>(uid, "select public.staff_create_appointment($1, $2, $3, $4::timestamptz, 'os') as id", [pract, svc, clientId, atTime(date, time).toISOString()]);
+      const id = await createAppointment(uid, pid, {
+        practitioner_id: pract,
+        service_id: svc,
+        client_id: clientId,
+        starts_at: atTime(date, time).toISOString(),
+        source: "os",
+      });
       toast("Appointment booked");
       closeNewAppt();
       openAppointment(id);

@@ -14,14 +14,106 @@ vertical slice and Phase 5 is not started. All 106 procedures already exist in
 | 1 | Gateway, `ContractGen`, pipeline, isolation gate | 2 slices | **Done** (2026-10-31) |
 | 2 | Public directory & queue, output caching | 10 / 10 | **Done** (2026-10-31) |
 | 3 | Patient & booking flow | 13 / 13 | **Done** (2026-11-01) |
-| 4 | Practice OS, 8 controllers | 62 / 62 | **Endpoints done**; UI migration (§3) outstanding |
-| 5 | Growth, Platform, observability, cutover | 21 / 21 | **Endpoints + observability done**; UI (§5), load test, alerts outstanding |
+| 4 | Practice OS, 8 controllers | 62 / 62 | **Done**, including the §3 UI migration |
+| 5 | Growth, Platform, observability, cutover | 21 / 21 | **Endpoints, observability and §5 UI done**; load test and alerts outstanding |
 
-**All 106 endpoints are routed.** Asserted from the running application's API Explorer, not from
-the source, so a controller that compiles but is never discovered would fail the check
-(`DefinitionOfDoneTests`). Test counts as of 2026-11-01: **90** xUnit unit tests, **56**
-PostgreSQL integration tests, **176** Vitest tests. `npx tsc --noEmit` is clean. CI runs all of it
+**All 106 endpoints are routed, and the product UI no longer touches a table.** The route count is
+asserted from the running application's API Explorer, not from the source, so a controller that
+compiles but is never discovered would fail the check (`DefinitionOfDoneTests`).
+
+Test counts as of 2026-11-02: **90** xUnit unit tests, **56** PostgreSQL integration tests,
+**179** Vitest tests. `npx tsc --noEmit` is clean, `npm run build` compiles, and CI runs all of it
 (`.github/workflows/ci.yml`).
+
+## Practice OS UI migration — Phase 4 §3 and Phase 5 §5 (2026-11-02)
+
+The product UI now reaches the database only through stored procedures. **This is the change that
+unblocks Stage 5**: `anon` and `authenticated` held table grants because the OS wrote raw SQL
+against `practitioners`, `services`, `clients`, `availability_rules`, `time_off`, `locations`,
+`practices`, `practice_members`, `queue_entries`, `marketing_*` and `campaign_*` straight from the
+browser. None of that remains.
+
+**Three new client modules**, each function calling exactly one procedure, through the API when
+one is configured and through the browser database otherwise — both branches calling the *same*
+procedure, because the demo database has all 106:
+
+- `src/lib/api/practice.ts` (45 functions), `growth.ts` (15), `platform.ts` (5).
+- `src/lib/os-data.ts` rewritten on top of them, which moved most screens at once.
+
+**19 files migrated.** Pages: dashboard, calendar, clients, client detail, insights, onboarding,
+queue, services, settings, team, growth, operator, admin. Components: `OsContext`, `OsRoot`,
+`CommandPalette`, `AppointmentDrawer`, `NewAppointmentModal`, `GrowthDetail`.
+
+### What the migration fixed, beyond the transport
+
+- **The Stage 0 sole-owner bug is gone from the UI too.** `src/app/practice/team/page.tsx` wrote
+  `update practice_members set role` from the browser, guarded only by a `disabled` attribute.
+  It now calls `PUT .../members/{userId}/role`, and `sole_owner` comes back as copy.
+- **The admin audit tab was broken.** It selected `profiles.full_name`, a column that does not
+  exist — the column is `display_name` — so the tab failed at runtime. `platform_audit_log`
+  returns the actor name itself, and pages by keyset rather than `limit 100`.
+- **Consent stopped destroying its own evidence.** The client detail toggle overwrote a boolean
+  and nulled the timestamp, so a withdrawal erased the proof that consent had ever been given.
+  Granting and withdrawing now append to the immutable series, and the newest event governs
+  (POPIA s11(3)). The toggle looks identical; the record underneath keeps its history.
+- **Onboarding became one transaction.** Six sequential browser writes could fail partway and
+  leave an account owning a practice with no practitioner, service or hours — a state the OS has
+  no screen for. `practice_onboard` does all of it atomically.
+- **The hard-coded `+02:00` is gone.** Team leave built its `tstzrange` with a literal offset;
+  `practice_timeoff_add` builds it in the practice's own timezone.
+- **Province is no longer typed in.** A location references a city and the province is a property
+  of that city (4NF), so settings and onboarding now pick a city and show the province derived
+  from it — the two can no longer disagree.
+- **Asset download is no longer served from the row the uploader wrote.** The blob is built from
+  what the API declares, which is an allowlisted media type with `attachment` and `nosniff`.
+- The "activate practice" demo shortcut is hidden whenever an API is configured: activation is
+  `platform_practice_status_set`, which only a platform admin may call. A practice cannot make
+  itself visible in the directory, which is the point of D-06.
+
+### Generated TypeScript row types
+
+The client modules' row interfaces were hand-written first. Diffing them against the generated C#
+rows found **16 of 24 already wrong** — naming columns the procedures do not return, or omitting
+ones they do, each a silent `undefined` at runtime rather than a compile error. That is exactly
+the drift D-26 removed from the TypeScript side and §6 removed from the C# side, reintroduced by
+hand.
+
+`BabyBlue.ContractGen` now also emits `src/lib/api/rows.generated.ts` — one interface per
+`returns table` procedure, from the same `pg_proc` catalogue — and the modules alias those. Column
+nullability is conservative there (`pg_proc` carries none for table columns), so the mapping
+layers coalesce in one place rather than spreading `?? ""` through the screens.
+
+### `tests/db/api-client-sql.test.ts`
+
+Every procedure-call SQL string in `src/lib/api/*` — **105 of them** — is extracted from the
+source and executed against a real engine, asserting the procedure exists with a matching arity
+and that none is a pre-Stage-3 legacy function.
+
+This exists because nothing else runs those strings: `tsc` cannot check a SQL literal, the .NET
+suite exercises the API branch instead, and the screens only reach them in a browser. That is the
+precise gap that let all thirteen `patient.ts` call sites sit broken behind a green suite.
+
+### The no-SQL gate now covers the whole UI
+
+CI's gate moved from `src/app/patient` to all of `src/app` and `src/components`, and was made
+precise: it refuses raw *table* access (`from public.<name>` with no parenthesis, or DML against
+a table) while allowing `from public.<name>(` — a procedure call, which is what the offline demo
+fallback is supposed to do.
+
+### Still on the browser database, deliberately
+
+Three references remain, all demo-only and behind `hasRemoteApi()` guards: the practice-activation
+shortcut, `resetLocalDb` on the demo reset button, and the asset-download fallback. The legacy
+Flow/staff demo under `/c`, `/q`, `/staff` is untouched — it is the fictional-data demo, not the
+product.
+
+### Verification
+
+12 OS routes return 200 with no server-side render errors; `npm run build` compiles. The screens
+themselves were not driven in a browser — Chrome was unreachable in this session — so the
+rendering of migrated pages is confirmed only to the extent that they build, typecheck, render
+server-side without error, and that every procedure call they make is proven against a real
+engine. **A pass through the OS in a browser is still worth doing before release.**
 
 ## API Layer Phase 5 — Growth, Platform & observability (2026-11-01)
 
@@ -127,15 +219,15 @@ Verified in code (`DefinitionOfDoneTests`, plus the suites above):
 
 Still open, and each needs something a test cannot supply:
 
-- [ ] `grep -rE "select |insert |update |delete " src/app src/components` is **not** clean —
-      Phase 4 §3 and Phase 5 §5 (the Practice OS, Growth and admin UI migrations) are outstanding.
-      The CI gate is scoped to `src/app/patient` until they land.
+- [x] The product UI no longer touches a table. The CI gate covers all of `src/app` and
+      `src/components`, and 105 client-layer procedure calls are verified against a real engine.
 - [ ] The **640-practitioner load test** (p99 budgets, zero `53300`) — needs a seeded corpus and a
       run; not written.
 - [ ] The **six production alerts** — need a staging environment to provision and fire-test.
-- [ ] **Stage 5 `revoke`** on tenant tables from `anon` and `authenticated`. The API no longer
-      needs those grants, but the PGlite TypeScript suite and the un-migrated Practice OS still
-      use them, so this cannot run until the UI migrations are done.
+- [ ] **Stage 5 `revoke`** on tenant tables from `anon` and `authenticated`. **Now unblocked** —
+      nothing in the product reads or writes a table directly. The remaining holder is the PGlite
+      TypeScript suite (`tests/db/*.test.ts`), which asserts RLS behaviour by querying tables as
+      `anon` and `authenticated` and would have to move to procedure-level assertions first.
 - [ ] **Decision 1** (hosting provider and region) still blocks go-live, and now also supplies the
       `Network:KnownProxies` values D-33 requires.
 

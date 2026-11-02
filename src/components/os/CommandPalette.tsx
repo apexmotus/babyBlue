@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BarChart3, CalendarDays, ClipboardList, LayoutDashboard, ListChecks, Megaphone, Plus, Settings, Stethoscope, User, Users, UsersRound } from "lucide-react";
 import { useOs } from "@/components/os/OsContext";
-import { query } from "@/local/db";
+import { searchClients } from "@/lib/api/practice";
 import { useQuery } from "@/local/hooks";
 
 interface Item { id: string; group: string; label: string; hint?: string; icon: typeof Users; run: () => void }
@@ -18,7 +18,14 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
   useEffect(() => input.current?.focus(), []);
 
   const clients = useQuery(
-    () => (os.practice && q.trim().length >= 2 ? query<{ id: string; name: string; phone: string | null }>(os.uid, "select id, trim(first_name || ' ' || last_name) name, phone from public.clients where practice_id = $1 and (first_name || ' ' || last_name ilike $2 or phone ilike $2) order by first_name limit 6", [os.practice.id, `%${q.trim()}%`]) : Promise.resolve([])),
+    () =>
+      os.practice && q.trim().length >= 2
+        // `practice_client_search` carries its own 30/min limiter, because this fires on every
+        // keystroke and must not be able to exhaust the caller's general request budget.
+        ? searchClients(os.uid, os.practice.id, q.trim(), 6).then((r) =>
+            r.map((c) => ({ id: c.client_id, name: c.full_name ?? "", phone: c.phone })),
+          )
+        : Promise.resolve([]),
     [q, os.practice?.id, os.uid],
   );
 

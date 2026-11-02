@@ -13,7 +13,10 @@ import { CommandPalette } from "@/components/os/CommandPalette";
 import { NewAppointmentModal } from "@/components/os/NewAppointmentModal";
 import { OsProvider, useOs } from "@/components/os/OsContext";
 import { Logo, useToast } from "@/components/ui";
-import { friendlyError, mutate, query, resetLocalDb } from "@/local/db";
+import { getQueueWaitingCount } from "@/lib/api/practice";
+import { friendlyError } from "@/lib/api/messages";
+import { hasRemoteApi } from "@/lib/api/http";
+import { resetLocalDb } from "@/local/db";
 import { useSession } from "@/local/auth";
 import { useQuery } from "@/local/hooks";
 import { ROLE_LABEL } from "@/lib/os-data";
@@ -70,7 +73,11 @@ function Shell({ children }: { children: ReactNode }) {
   const [cmd, setCmd] = useState(false);
   const [switcher, setSwitcher] = useState(false);
   const pid = os.practice?.id;
-  const waiting = useQuery(() => (pid ? query<{ n: number }>(os.uid, "select count(*)::int n from public.queue_entries where practice_id = $1 and status = 'waiting'", [pid]).then((r) => r[0].n) : Promise.resolve(0)), [pid, os.uid], { poll: 6000, enabled: !!pid });
+  const waiting = useQuery(
+    () => (pid ? getQueueWaitingCount(os.uid, pid) : Promise.resolve(0)),
+    [pid, os.uid],
+    { poll: 6000, enabled: !!pid },
+  );
 
   useEffect(() => setMenu(false), [path]);
   useEffect(() => {
@@ -202,10 +209,18 @@ function ActivateBanner() {
       <div style={{ flex: 1, minWidth: 240 }}>
         <b>{os.practice!.status === "pending" ? "Your practice isn't live yet." : "This practice is suspended."}</b> Patients can&apos;t find or book you until a platform admin activates it.
       </div>
-      {os.practice!.status === "pending" && os.isOwner && (
+      {os.practice!.status === "pending" && os.isOwner && !hasRemoteApi() && (
+        // Demo-only shortcut. Against a real API this button cannot exist: activating a practice
+        // is `platform_practice_status_set`, which `is_platform_admin()` gates — a practice
+        // cannot make itself visible in the directory, which is the point of D-06. The demo has
+        // no platform admin to ask, so it keeps a labelled shortcut.
         <Btn className="primary sm" loading={busy} onClick={async () => {
           setBusy(true);
-          try { await mutate(os.uid, "select public.demo_activate_practice($1)", [os.practice!.id]); toast("Practice is live in the demo"); } catch (e) { toast(friendlyError(e)); } finally { setBusy(false); }
+          try {
+            const { mutate } = await import("@/local/db");
+            await mutate(os.uid, "select public.demo_activate_practice($1)", [os.practice!.id]);
+            toast("Practice is live in the demo");
+          } catch (e) { toast(friendlyError(e)); } finally { setBusy(false); }
         }}>Activate (demo shortcut)</Btn>
       )}
     </div>

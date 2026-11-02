@@ -8,7 +8,8 @@ import { useOs } from "@/components/os/OsContext";
 import { useToast } from "@/components/ui";
 import { money } from "@/lib/format";
 import { loadPractitioners, loadServices, type Svc } from "@/lib/os-data";
-import { friendlyError, mutate, query } from "@/local/db";
+import { listServicePractitioners, setServicePractitioners, upsertService } from "@/lib/api/practice";
+import { friendlyError } from "@/lib/api/messages";
 import { useQuery } from "@/local/hooks";
 
 export default function ServicesPage() {
@@ -20,8 +21,9 @@ function Services() {
   const pid = os.practice!.id;
   const [edit, setEdit] = useState<Svc | "new" | null>(null);
   const svcs = useQuery(() => loadServices(os.uid, pid), [pid, os.uid]);
-  const counts = useQuery(() => query<{ service_id: string; n: number }>(os.uid, "select service_id, count(*)::int n from public.practitioner_services where practice_id = $1 group by 1", [pid]), [pid, os.uid]);
-  const nOf = (id: string) => counts.data?.find((c) => c.service_id === id)?.n ?? 0;
+  // `practice_services_list` already returns `practitioner_count`, so the separate grouped
+  // count query is gone.
+  const nOf = (id: string) => svcs.data?.find((s) => s.id === id)?.practitioner_count ?? 0;
   return (
     <>
       <div className="os-page-h">
@@ -60,7 +62,10 @@ function Editor({ svc, onClose }: { svc: Svc | null; onClose: () => void }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const pracs = useQuery(() => loadPractitioners(os.uid, pid), [pid, os.uid]);
-  const links = useQuery(() => (svc ? query<{ practitioner_id: string }>(os.uid, "select practitioner_id from public.practitioner_services where service_id = $1", [svc.id]) : Promise.resolve([])), [svc?.id, os.uid]);
+  const links = useQuery(
+    () => (svc ? listServicePractitioners(os.uid, pid, svc.id) : Promise.resolve([])),
+    [svc?.id, pid, os.uid],
+  );
   const cur = offered ?? new Set((links.data ?? []).map((l) => l.practitioner_id));
   const toggle = (id: string) => { const n = new Set(cur); if (n.has(id)) n.delete(id); else n.add(id); setOffered(n); };
 
@@ -72,11 +77,22 @@ function Editor({ svc, onClose }: { svc: Svc | null; onClose: () => void }) {
     if (price !== null && (Number.isNaN(price) || price < 0)) return setError("Enter a valid fee.");
     setBusy(true);
     try {
-      let id = svc?.id;
-      if (id) await mutate(os.uid, "update public.services set name = $2, description = nullif($3, ''), duration_min = $4, buffer_min = $5, price_cents = $6, active = $7 where id = $1", [id, f.name.trim(), f.description.trim(), dur, buf, price, f.active]);
-      else { const [r] = await mutate<{ id: string }>(os.uid, "insert into public.services (practice_id, name, description, duration_min, buffer_min, price_cents, active) values ($1, $2, nullif($3, ''), $4, $5, $6, $7) returning id", [pid, f.name.trim(), f.description.trim(), dur, buf, price, f.active]); id = r.id; }
+      // One upsert for both create and edit. Making a service bookable without a price is
+      // refused by the procedure as `price_required`, which arrives here as friendly copy.
+      const id = await upsertService(os.uid, pid, {
+        service_id: svc?.id ?? null,
+        name: f.name.trim(),
+        description: f.description.trim() || null,
+        duration_min: dur,
+        buffer_min: buf,
+        price_cents: price,
+        active: f.active,
+      });
+
       const want = offered ?? new Set((links.data ?? []).map((l) => l.practitioner_id));
-      await mutate(os.uid, "with d as (delete from public.practitioner_services where service_id = $1) insert into public.practitioner_services (practitioner_id, service_id, practice_id) select x, $1, $2 from unnest($3::uuid[]) x", [id, pid, [...want]]);
+      // Replaces the delete-then-insert that ran from the browser. Emptying the set while future
+      // bookings exist is refused as `last_practitioner`.
+      await setServicePractitioners(os.uid, pid, id, [...want]);
       toast(svc ? "Service updated" : "Service added");
       onClose();
     } catch (e) { setError(friendlyError(e)); setBusy(false); }
