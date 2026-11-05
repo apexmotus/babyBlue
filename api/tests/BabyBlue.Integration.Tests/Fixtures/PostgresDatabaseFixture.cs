@@ -20,6 +20,8 @@ public sealed class PostgresDatabaseCollection : ICollectionFixture<PostgresData
 /// </summary>
 public sealed class PostgresDatabaseFixture : IAsyncLifetime
 {
+    private const string TestRolePassword = "bb_api_test_password";
+
     private string? _dataDir;
     private bool _ownsCluster;
 
@@ -85,12 +87,16 @@ public sealed class PostgresDatabaseFixture : IAsyncLifetime
                 $"Host={host};Port={port};Database=postgres;Username=postgres;SslMode=Disable;Pooling=false;Include Error Detail=true";
         }
 
+        // A password is set on these roles below (TestRolePassword) so these connection strings
+        // work both against the trust-auth cluster this fixture boots locally and against an
+        // external Postgres service (CI) that enforces SCRAM auth for every role, not just the
+        // superuser used to apply migrations.
         BbApiConnectionString =
-            $"Host={host};Port={port};Database=postgres;Username=bb_api;SslMode=Disable";
+            $"Host={host};Port={port};Database=postgres;Username=bb_api;Password={TestRolePassword};SslMode=Disable";
         InheritRoleConnectionString =
-            $"Host={host};Port={port};Database=postgres;Username=bb_api_bad_inherit;SslMode=Disable";
+            $"Host={host};Port={port};Database=postgres;Username=bb_api_bad_inherit;Password={TestRolePassword};SslMode=Disable";
         BypassRlsRoleConnectionString =
-            $"Host={host};Port={port};Database=postgres;Username=bb_api_bad_bypassrls;SslMode=Disable";
+            $"Host={host};Port={port};Database=postgres;Username=bb_api_bad_bypassrls;Password={TestRolePassword};SslMode=Disable";
 
         await ApplyBootstrapAndMigrationsAsync();
     }
@@ -287,6 +293,17 @@ public sealed class PostgresDatabaseFixture : IAsyncLifetime
             """;
 
         await ExecuteSqlScriptAsync(conn, testSetupSql);
+
+        // Set a password on every role the API connects as. The locally-booted cluster above uses
+        // trust auth (no password needed), but an external Postgres service (CI) enforces SCRAM
+        // auth for every role, not just the superuser used to apply migrations and seed data.
+        await ExecuteSqlScriptAsync(
+            conn,
+            $"""
+            alter role bb_api password '{TestRolePassword}';
+            alter role bb_api_bad_inherit password '{TestRolePassword}';
+            alter role bb_api_bad_bypassrls password '{TestRolePassword}';
+            """);
     }
 
     private static async Task ExecuteSqlScriptAsync(NpgsqlConnection conn, string sql)
