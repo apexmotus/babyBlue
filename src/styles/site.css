@@ -171,7 +171,7 @@ a.x-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
 .x-footer a:hover { color: #fff; text-decoration: underline; }
 .x-footer h4 { color: #fff; font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 16px; }
 .x-footer ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; font-size: 15px; }
-.x-foot-grid { display: grid; grid-template-columns: 1.5fr repeat(4, 1fr); gap: 36px; }
+.x-foot-grid { display: grid; grid-template-columns: 1.5fr repeat(3, 1fr); gap: 36px; }
 .x-foot-base { border-top: 1px solid rgba(255, 255, 255, 0.14); margin-top: 48px; padding-top: 24px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; font-size: 13px; line-height: 1.6; }
 
 /* ───── forms ───── */

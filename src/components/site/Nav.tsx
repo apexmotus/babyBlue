@@ -5,9 +5,12 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Menu, Search, X } from "lucide-react";
 import { Logo } from "@/components/ui";
-import { NAV } from "@/lib/site";
+import { NAV, PRO_NAV } from "@/lib/site";
 
-export function Nav() {
+/** "patient" is the public site. "pro" is the practitioner site, which patients are never sent to. */
+export function Nav({ variant = "patient" }: { variant?: "patient" | "pro" }) {
+  const pro = variant === "pro";
+  const links = pro ? PRO_NAV : NAV;
   const path = usePathname();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -63,18 +66,26 @@ export function Nav() {
   return (
     <header className={`x-nav ${scrolled ? "is-scrolled" : ""} ${open ? "is-open" : ""}`}>
       <div className="x-container x-nav-in">
-        <Logo size={34} />
+        <Logo size={34} href={pro ? "/practitioners" : "/"} />
         <nav className="x-nav-links" aria-label="Primary">
-          {NAV.map((n) => (
+          {links.map((n) => (
             <Link key={n.href} href={n.href} aria-current={path === n.href ? "page" : undefined}>
               {n.label}
             </Link>
           ))}
         </nav>
         <div className="x-nav-cta">
-          <Link href="/contact" className="x-nav-text opt">Contact</Link>
-          <Link href="/practice/login" className="x-nav-text">Practice login</Link>
-          <Link href="/patient" className="x-btn x-btn-primary x-btn-sm"><Search size={16} aria-hidden="true" /> Find care</Link>
+          {pro ? (
+            <>
+              <Link href="/practice/login" className="x-nav-text">Practice login</Link>
+              <Link href="/practitioners/contact" className="x-btn x-btn-primary x-btn-sm">Talk to us</Link>
+            </>
+          ) : (
+            <>
+              <Link href="/patient/login" className="x-nav-text">Sign in</Link>
+              <Link href="/patient" className="x-btn x-btn-primary x-btn-sm"><Search size={16} aria-hidden="true" /> Find care</Link>
+            </>
+          )}
           <button ref={btn} className="x-burger" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} aria-controls="x-drawer" onClick={() => setOpen((o) => !o)}>
             {open ? <X size={22} /> : <Menu size={22} />}
           </button>
@@ -82,16 +93,22 @@ export function Nav() {
       </div>
       {open && (
         <div id="x-drawer" ref={drawer} className="x-drawer" role="dialog" aria-label="Menu">
-          {NAV.map((n) => (
+          {links.map((n) => (
             <Link key={n.href} href={n.href} className="x-dl" aria-current={path === n.href ? "page" : undefined}>
               {n.label}
             </Link>
           ))}
-          <Link href="/os" className="x-dl">BabyBlue OS</Link>
-          <Link href="/flow" className="x-dl">BabyBlue Flow</Link>
-          <Link href="/contact" className="x-dl">Contact</Link>
-          <Link href="/practice/login" className="x-dl">Practice login</Link>
-          <Link href="/patient" className="x-btn x-btn-primary" style={{ marginTop: 24 }}><Search size={18} aria-hidden="true" /> Find care</Link>
+          {pro ? (
+            <>
+              <Link href="/practice/login" className="x-dl">Practice login</Link>
+              <Link href="/practitioners/contact" className="x-btn x-btn-primary" style={{ marginTop: 24 }}>Talk to us</Link>
+            </>
+          ) : (
+            <>
+              <Link href="/patient/login" className="x-dl">Sign in</Link>
+              <Link href="/patient" className="x-btn x-btn-primary" style={{ marginTop: 24 }}><Search size={18} aria-hidden="true" /> Find care</Link>
+            </>
+          )}
         </div>
       )}
     </header>

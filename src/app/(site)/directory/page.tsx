@@ -64,7 +64,7 @@ export default async function DirectoryPage({ searchParams }: { searchParams: Pr
           <h1 className="f-h1 x-rise d1">{filtered ? `${n(res.total)} ${res.total === 1 ? "practice" : "practices"}` : "Practices across South Africa."}</h1>
           <p className="f-lead x-rise d2">
             {stats.total > 0
-              ? `${n(stats.total)} real practices, from hospitals and clinics to dentists and physiotherapists. They haven't joined BabyBlue yet, so call to book. If you run one, you can join and take bookings here.`
+              ? `${n(stats.total)} real practices, from hospitals and clinics to dentists and physiotherapists. They can't be booked on BabyBlue yet, so call to book.`
               : "The directory is being filled in batches of 100 real practices. Check back soon."}
           </p>
           <div className="x-rise d3"><DirectorySearch values={params} stats={stats} /></div>
@@ -121,10 +121,10 @@ export default async function DirectoryPage({ searchParams }: { searchParams: Pr
       </Section>
 
       <CtaBand
-        title="Run one of these practices?"
-        lead="Join BabyBlue to show real appointment times, take bookings from patients and run the day in one place. Every booking is marked as coming from BabyBlue."
-        primary={{ href: "/practitioners", label: "For practitioners" }}
-        secondary={{ href: "/practice/login", label: "Open BabyBlue OS" }}
+        title="Ready to book?"
+        lead="Search by speciality and city to see practitioners with real, open appointment times. The demo uses fictional practices."
+        primary={{ href: "/patient", label: "Find care" }}
+        secondary={{ href: "/contact", label: "Contact us" }}
       />
     </>
   );

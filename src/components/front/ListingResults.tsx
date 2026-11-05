@@ -48,7 +48,7 @@ export function ListingResults({ speciality, city, noun, empty, emptyBody }: { s
       ) : rows.length === 0 ? (
         <div className="f-empty">
           <Empty icon={<SearchX size={28} />} title={`No ${noun} on BabyBlue yet`} action={empty}>
-            {emptyBody ?? "Nobody matching this page has opened a diary on BabyBlue yet. We only list practitioners who have real, bookable times."}
+            {emptyBody ?? "Nobody matching this page can be booked on BabyBlue yet. We only list practitioners who have real, bookable times."}
           </Empty>
         </div>
       ) : (

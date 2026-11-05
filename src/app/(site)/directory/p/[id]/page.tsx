@@ -5,13 +5,14 @@ import { ArrowRight, ExternalLink, Globe, MapPin, Navigation, Phone } from "luci
 import { DirectoryAttribution } from "@/components/directory/DirectoryAttribution";
 import { DirectoryCard } from "@/components/directory/DirectoryCard";
 import { KindIcon } from "@/components/directory/KindIcon";
-import { Btn, CtaBand, Section } from "@/components/site/blocks";
+import { CtaBand, Section } from "@/components/site/blocks";
 import { slugify } from "@/lib/directory";
 import { pageMeta } from "@/lib/meta";
 import { formatPhone } from "@/lib/phone";
 import { PRACTICES, SOURCE, getPractice } from "@/lib/practices/data";
 import { queryPractices } from "@/lib/practices/query";
 import { KIND_INFO, addressLine, hostOf, mapsUrl, osmUrl } from "@/lib/practices/types";
+import { SITE } from "@/lib/site";
 
 type Props = { params: Promise<{ id: string }> };
 const find = async (params: Props["params"]) => {
@@ -69,18 +70,15 @@ export default async function PracticePage({ params }: Props) {
 
           <div className="x-card f-pcard soft">
             <h2 className="f-h3">Booking</h2>
-            <p>This practice hasn&apos;t joined BabyBlue, so there are no times to book here yet. Please call them to make an appointment.</p>
-            <h2 className="f-h3" style={{ marginTop: 22 }}>Is this your practice?</h2>
-            <p>Join BabyBlue to show real appointment times and take bookings. Every booking arrives marked as coming from BabyBlue.</p>
-            <div className="x-btn-row" style={{ marginTop: 14 }}><Btn href="/practitioners" arrow small>See how it works</Btn></div>
+            <p>This practice can&apos;t be booked on BabyBlue yet, so there are no times to book here. Please call them to make an appointment.</p>
           </div>
         </div>
 
         <div className="x-notice info" style={{ marginTop: 20 }}>
           <MapPin size={20} aria-hidden="true" />
           <div>
-            <b>Something wrong or out of date?</b> Anyone can fix it at the source: <a href={osmUrl(p.id)} target="_blank" rel="noopener noreferrer">edit this practice on OpenStreetMap</a>. To ask BabyBlue to stop showing it, use the{" "}
-            <Link href="/contact">contact form</Link>, choose &ldquo;Privacy request (POPIA)&rdquo; and quote <b>{p.id}</b>.
+            <b>Something wrong or out of date?</b> Anyone can fix it at the source: <a href={osmUrl(p.id)} target="_blank" rel="noopener noreferrer">edit this practice on OpenStreetMap</a>. To ask BabyBlue to stop showing it, {SITE.contactEmail ? (<>email <a href={`mailto:${SITE.contactEmail}?subject=${encodeURIComponent(`Directory removal request ${p.id}`)}`}>{SITE.contactEmail}</a> quoting <b>{p.id}</b>, or use the{" "}</>) : <>use the{" "}</>}
+            <Link href="/contact">contact form</Link>{SITE.contactEmail ? "" : <>, choose &ldquo;Privacy request (POPIA)&rdquo; and quote <b>{p.id}</b></>}.
           </div>
         </div>
 

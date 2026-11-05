@@ -123,7 +123,7 @@ export function ListingPage({ spec, city }: { spec?: SpecialityPage; city?: City
               <span className="f-kicker">Practice directory</span>
               <h2 className="f-h2">{spec && city ? `${spec.plural} in ${city.name}` : city ? `Practices in ${city.name}` : spec ? `${spec.plural} across South Africa` : "Practices"}, <span className="acc">not on BabyBlue yet.</span></h2>
             </div>
-            <p className="f-lead">Real practices from the directory. They have not joined BabyBlue, so call to book.</p>
+            <p className="f-lead">Real practices from the directory. They can't be booked on BabyBlue yet, so call to book.</p>
           </div>
           <ul className="f-dgrid">{dir.items.map((p) => <li key={p.id}><DirectoryCard p={p} /></li>)}</ul>
           <p style={{ marginTop: 18 }}><Link className="a-link" href={dirHref}>See all {dir.total.toLocaleString("en-ZA")} in the directory <ArrowRight size={14} aria-hidden="true" style={{ verticalAlign: "-2px" }} /></Link></p>
@@ -155,10 +155,10 @@ export function ListingPage({ spec, city }: { spec?: SpecialityPage; city?: City
       </Section>
 
       <CtaBand
-        title="Are you a practitioner?"
-        lead="Open your diary on BabyBlue, let patients book real times, and run the practice behind it. Every practice in the demo is fictional."
-        primary={{ href: "/practitioners", label: "For practitioners" }}
-        secondary={{ href: "/practice/login", label: "Open BabyBlue OS" }}
+        title="Not sure who to pick?"
+        lead="Open the patient app to search by speciality, service and place, and see real open times. Every practice in the demo is fictional."
+        primary={{ href: "/patient", label: "Find care" }}
+        secondary={{ href: "/directory", label: "Browse the directory" }}
       />
     </>
   );

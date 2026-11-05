@@ -13,11 +13,11 @@ export default function Popia() {
         <h2>What we keep</h2>
         <p>The minimum needed to run a booking or a queue: a name, a contact number or email, and appointment details. BabyBlue does not ask the public for ID numbers, passport numbers or dates of birth. Signing up takes a name, an email address and a WhatsApp-compatible mobile number, and nothing more. Intake answers are structured categories, never free text.</p>
         <h2>Who can see it</h2>
-        <p>Only the practice a person books with, through role-based access. Practices are isolated from each other, and platform staff access is limited, logged and purpose-bound.</p>
+        <p>Only the practice a person books with. Other practices cannot see it, and BabyBlue staff access is limited, logged and purpose-bound.</p>
         <h2>Messages</h2>
         <p>Notifications carry the practice name, appointment time or queue position. They never contain a reason for the visit, an intake answer or a diagnosis.</p>
         <h2>Marketing and health information</h2>
-        <p>Health information is never used to target advertising or marketing. BabyBlue Growth campaigns are built around a practitioner&apos;s own public information and approved creative, not patient data.</p>
+        <p>Health information is never used to target advertising or marketing.</p>
         <h2>Consent and rights</h2>
         <p>Record storage is opt-in and can be withdrawn. People can ask a practice, or us, to access, correct or delete their personal information. Use the <a href="/contact">contact page</a> and choose &ldquo;Privacy request&rdquo;.</p>
         <h2>Roles</h2>
