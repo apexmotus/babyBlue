@@ -1,4 +1,4 @@
-import { Compass, EyeOff, Handshake, HeartPulse, ShieldCheck } from "lucide-react";
+import { CalendarClock, Compass, EyeOff, HeartPulse, ShieldCheck } from "lucide-react";
 import { CtaBand, Head, PageHero, PhotoSlot, Section } from "@/components/site/blocks";
 import { pageMeta } from "@/lib/meta";
 
@@ -7,8 +7,8 @@ export const metadata = pageMeta("About BabyBlue — Care, connected.", "BabyBlu
 const VALUES = [
   [HeartPulse, "People first", "Every decision starts with the person trying to get care."],
   [ShieldCheck, "Earned trust", "We verify before we badge. We measure before we claim. We never fabricate reviews, ratings or results."],
-  [EyeOff, "Privacy by design", "Sensitive health information is protected, kept separate between practices and never used to target marketing."],
-  [Handshake, "Practices as partners", "We work with independent practitioners, not around them. Practices decide what they offer and when."],
+  [EyeOff, "Privacy by design", "Sensitive health information is protected and never used to target marketing."],
+  [CalendarClock, "Real availability", "We show only times a practice has actually opened. No guesswork, no phone tag."],
   [Compass, "Local first", "Built for how South Africans actually find and use care, with Southern Africa in mind from day one."],
 ] as const;
 

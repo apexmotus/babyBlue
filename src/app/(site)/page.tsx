@@ -75,7 +75,7 @@ export default function Home() {
       </section>
 
       {/* TRUST BAR */}
-      <div className="x-trustbar" role="list" aria-label="Platform highlights">
+      <div className="x-trustbar" role="list" aria-label="Highlights">
         {[
           [CalendarCheck, "Book any time", "Pick a slot, any hour"],
           [Clock, "Real availability", "Straight from the diary"],
@@ -163,7 +163,7 @@ export default function Home() {
             <span className="f-kicker">Find care in your city</span>
             <h2 className="f-h2">Start with <span className="acc">where you are.</span></h2>
           </div>
-          <p className="f-lead">Each city page lists only practitioners who have opened a diary on BabyBlue, so every time you see can be booked.</p>
+          <p className="f-lead">Each city page lists only practitioners with real, bookable times, so every time you see can be booked.</p>
         </div>
         <ul className="f-cities">
           {cities.map((c, i) => (
@@ -183,8 +183,8 @@ export default function Home() {
           <div className="x-split">
             <div className="x-stack" style={{ ["--gap" as string]: "18px" }}>
               <span className="x-eyebrow">Practice directory</span>
-              <h2 className="x-h2">Real practices near you, even before they join BabyBlue.</h2>
-              <p className="x-lead">Browse hospitals, clinics, doctors, dentists and other practices across South Africa. The ones that join BabyBlue show real appointment times and take bookings, each marked as coming from BabyBlue.</p>
+              <h2 className="x-h2">Real practices near you.</h2>
+              <p className="x-lead">Browse hospitals, clinics, doctors, dentists and other practices across South Africa. Where a practice can be booked on BabyBlue you'll see its real appointment times. For the rest, you'll find the details you need to call.</p>
               <div className="x-btn-row"><Btn href="/directory" variant="light" arrow>Browse the directory</Btn></div>
             </div>
             <div>
@@ -256,7 +256,7 @@ export default function Home() {
         <div className="x-grid x-g3">
           {[
             [BadgeCheck, "Verification you can see", "A verified badge appears only after registration has been checked against the relevant statutory council's public register. Until then, a profile says it hasn't been verified."],
-            [ShieldCheck, "Privacy by design", "Built around POPIA. Your information is kept separate from every other practice's, access is role-based, and health information is never used to target advertising or marketing."],
+            [ShieldCheck, "Privacy by design", "Built around POPIA. Only the practice you book with sees your details, and health information is never used to target advertising or marketing."],
             [Wallet, "No fabricated proof", "No made-up reviews, ratings or results. Everything you see comes from real practices and real bookings, and you can always see where it comes from."],
           ].map(([I, t, d]) => {
             const Ic = I as typeof Lock;

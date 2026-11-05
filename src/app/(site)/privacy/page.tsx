@@ -14,7 +14,7 @@ export default function Privacy() {
         </div>
 
         <h2>1. Who we are</h2>
-        <p>BabyBlue (&ldquo;we&rdquo;) provides an online platform connecting people with practitioners and tools for practitioners to run their practices. For personal information collected through this website (the contact form) BabyBlue is the responsible party under the Protection of Personal Information Act, 2013 (POPIA).</p>
+        <p>BabyBlue (&ldquo;we&rdquo;) provides an online platform connecting people with practitioners. For personal information collected through this website (the contact form) BabyBlue is the responsible party under the Protection of Personal Information Act, 2013 (POPIA).</p>
         <p><strong>Information Officer:</strong> [to be appointed and registered with the Information Regulator before launch]</p>
 
         <h2>2. What we collect on this website</h2>
@@ -44,7 +44,7 @@ export default function Privacy() {
         <p>We use access controls, encryption in transit and server-side validation, and keep credentials out of client code. No system is perfectly secure, and we will notify you and the Regulator of any qualifying breach as the law requires.</p>
 
         <h2>8. The BabyBlue platform</h2>
-        <p>When the booking app and practice tools launch, practices will be the responsible party for their clients&apos; information and BabyBlue will act as an operator under written agreements. A full platform privacy notice will be published before that happens.</p>
+        <p>When the booking app launches, the practice you book with will be the responsible party for the information it holds about you and BabyBlue will act as an operator under written agreements. A full platform privacy notice will be published before that happens.</p>
 
         <h2>9. Changes</h2>
         <p>We will update this policy as BabyBlue changes and show the date of the latest version here.</p>

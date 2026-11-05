@@ -27,7 +27,7 @@ All three features send messages, so build the delivery path once.
 
 **Practice experience (front-end, mine):** a practice finds its entry and starts a claim on the practice side of the site (`/practitioners/claim`). It enters their name, role, work email and phone. Status page: pending, verified, rejected. On approval the directory entry becomes the starting point of onboarding, with name, address and kind already filled in.
 
-**Open question on discoverability:** per D-34 patients see nothing of the practice side. A claim link on each directory page ("Own this practice?") is the usual pattern but it tells patients there is a practice side. Default until decided: no link on patient pages; practices are pointed to the claim page by outreach. Decide with Thami.
+**Decided (2026-11-05): no claim link anywhere on the patient site.** The patient site is a rider app and shows nothing of the supply side (D-34). Practices are pointed to the claim page by outreach, and it lives on the practice side. Decide with Thami.
 
 **Verification, strongest first (never fabricate a verified state):**
 1. Email at the practice's own website domain, by magic link. The directory already holds the website for many entries.
@@ -69,6 +69,5 @@ Today the "via BabyBlue" chip only shows inside the practice dashboard. Add emai
 ## Decisions needed before building
 
 - **Provider and channel** for alerts: email only first (cheapest, no template approval), or WhatsApp now (needs approved templates and a business account). Cost per message is real.
-- **Claim link on patient pages:** yes or no (see above).
 - **Alert expiry** (30 days proposed) and quota (5 proposed).
 - **Hosting region** (already open as Decision 1), because messages carry personal data.

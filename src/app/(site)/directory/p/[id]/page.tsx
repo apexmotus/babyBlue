@@ -70,7 +70,7 @@ export default async function PracticePage({ params }: Props) {
 
           <div className="x-card f-pcard soft">
             <h2 className="f-h3">Booking</h2>
-            <p>This practice hasn&apos;t joined BabyBlue, so there are no times to book here yet. Please call them to make an appointment.</p>
+            <p>This practice can&apos;t be booked on BabyBlue yet, so there are no times to book here. Please call them to make an appointment.</p>
           </div>
         </div>
 
