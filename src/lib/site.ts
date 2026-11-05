@@ -3,20 +3,28 @@ export const SITE = {
   name: "BabyBlue",
   tagline: "Care, connected.",
   description:
-    "BabyBlue connects people with practitioners and helps practitioners attract customers, manage appointments and grow their practices. Care, connected.",
+    "Find and book care with practitioners across South Africa, at times that suit you. Care, connected.",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://babyblue-demo.vercel.app",
   /** Search engines are only invited in once the owner sets ALLOW_INDEXING=true (never on previews). */
   indexable: process.env.ALLOW_INDEXING === "true",
   contactEmail: process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "",
 } as const;
 
+/** Patient site navigation. Nothing here may point at the practitioner side: patients should not meet it. */
 export const NAV = [
-  { href: "/app", label: "Patients" },
-  { href: "/practitioners", label: "Practitioners" },
-  { href: "/growth", label: "Marketing & Growth" },
+  { href: "/directory", label: "Practice directory" },
+  { href: "/app", label: "How it works" },
+  { href: "/about", label: "About" },
+  { href: "/contact", label: "Contact" },
+] as const;
+
+/** Practitioner site navigation (the "pro" route group). Reached from /practitioners, never linked from the patient site. */
+export const PRO_NAV = [
+  { href: "/os", label: "BabyBlue OS" },
+  { href: "/growth", label: "Growth" },
+  { href: "/flow", label: "Flow" },
   { href: "/solutions", label: "Solutions" },
   { href: "/pricing", label: "Pricing" },
-  { href: "/about", label: "About" },
 ] as const;
 
 export const CATEGORIES = [

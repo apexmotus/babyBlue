@@ -121,10 +121,10 @@ export default async function DirectoryPage({ searchParams }: { searchParams: Pr
       </Section>
 
       <CtaBand
-        title="Run one of these practices?"
-        lead="Join BabyBlue to show real appointment times, take bookings from patients and run the day in one place. Every booking is marked as coming from BabyBlue."
-        primary={{ href: "/practitioners", label: "For practitioners" }}
-        secondary={{ href: "/practice/login", label: "Open BabyBlue OS" }}
+        title="Ready to book?"
+        lead="Search by speciality and city to see practitioners with real, open appointment times. The demo uses fictional practices."
+        primary={{ href: "/patient", label: "Find care" }}
+        secondary={{ href: "/contact", label: "Contact us" }}
       />
     </>
   );

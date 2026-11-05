@@ -21,7 +21,7 @@ export default function AppPage() {
         eyebrow="BabyBlue App"
         title={<>Your next appointment, <span className="x-accent">a few taps away.</span></>}
         lead="Find the right practitioner, see when they're genuinely free, and book in minutes. Care that fits your life, in one clear, calm app."
-        actions={<><Btn href="/patient" arrow>Open the patient app</Btn><Btn href="/practitioners" variant="outline">I&apos;m a practitioner</Btn></>}
+        actions={<><Btn href="/patient" arrow>Open the patient app</Btn><Btn href="/directory" variant="outline">Browse the directory</Btn></>}
         aside={
           <div style={{ display: "flex", justifyContent: "center", gap: "4%", alignItems: "center" }}>
             <PhoneMock className="x-float" />
@@ -94,7 +94,7 @@ export default function AppPage() {
         <div className="x-narrow x-center"><Faq items={FAQ} /></div>
       </Section>
 
-      <CtaBand title="Try it yourself." lead="Search practitioners, pick a real open slot and book. The demo runs on fictional practices, so nothing you do is real." primary={{ href: "/patient", label: "Open the patient app" }} secondary={{ href: "/practitioners", label: "For practitioners" }} />
+      <CtaBand title="Try it yourself." lead="Search practitioners, pick a real open slot and book. The demo runs on fictional practices, so nothing you do is real." primary={{ href: "/patient", label: "Open the patient app" }} secondary={{ href: "/directory", label: "Browse the directory" }} />
     </>
   );
 }

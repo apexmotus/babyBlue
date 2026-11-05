@@ -155,10 +155,10 @@ export function ListingPage({ spec, city }: { spec?: SpecialityPage; city?: City
       </Section>
 
       <CtaBand
-        title="Are you a practitioner?"
-        lead="Open your diary on BabyBlue, let patients book real times, and run the practice behind it. Every practice in the demo is fictional."
-        primary={{ href: "/practitioners", label: "For practitioners" }}
-        secondary={{ href: "/practice/login", label: "Open BabyBlue OS" }}
+        title="Not sure who to pick?"
+        lead="Open the patient app to search by speciality, service and place, and see real open times. Every practice in the demo is fictional."
+        primary={{ href: "/patient", label: "Find care" }}
+        secondary={{ href: "/directory", label: "Browse the directory" }}
       />
     </>
   );

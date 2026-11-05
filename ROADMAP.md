@@ -16,6 +16,7 @@ Planning documents that feed this roadmap: [`DATABASE_SCHEMA_4NF.md`](DATABASE_S
 9. **Quality**: Playwright end-to-end suite, axe accessibility CI, Lighthouse budgets, Sentry, structured logging, rate limiting at the edge.
 
 ## Front door follow-ups
+- **Done 2026-11-05:** patient and practice front doors split (D-34). **Designed, not built:** slot alerts, claim a listing and booking notifications to practices, with the shared notification outbox they depend on: `plans/features/FRONT_DOOR_FEATURES.md`.
 - **Slot alerts / standby ("no time that suits me?")**: patient picks a practitioner and a window and is told when a slot opens. Needs a `slot_alerts` table with RLS, a notification channel and a quota. Replaces SMOMO's open-ended "post a request", which is out of scope for health (D-19).
 - **Server-side listing data** once Supabase is live: replace `demoListedFacets()` and `ListingResults` (D-17), then consider `Physician`/`MedicalBusiness` structured data for verified, real practices only.
 - **Photography** into the hero stage and speciality tiles (add an image layer; layout is ready).

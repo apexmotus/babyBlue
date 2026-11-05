@@ -17,7 +17,7 @@ export default function Popia() {
         <h2>Messages</h2>
         <p>Notifications carry the practice name, appointment time or queue position. They never contain a reason for the visit, an intake answer or a diagnosis.</p>
         <h2>Marketing and health information</h2>
-        <p>Health information is never used to target advertising or marketing. BabyBlue Growth campaigns are built around a practitioner&apos;s own public information and approved creative, not patient data.</p>
+        <p>Health information is never used to target advertising or marketing. Any marketing a practitioner runs through BabyBlue is built around the practitioner&apos;s own public information and approved creative, not patient data.</p>
         <h2>Consent and rights</h2>
         <p>Record storage is opt-in and can be withdrawn. People can ask a practice, or us, to access, correct or delete their personal information. Use the <a href="/contact">contact page</a> and choose &ldquo;Privacy request&rdquo;.</p>
         <h2>Roles</h2>

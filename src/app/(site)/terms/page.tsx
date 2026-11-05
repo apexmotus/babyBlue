@@ -10,14 +10,14 @@ export default function Terms() {
         <span className="x-eyebrow">Legal</span>
         <h1 className="x-h1" style={{ fontSize: "clamp(2.2rem,4.5vw,3.4rem)", margin: "16px 0 12px" }}>Terms of use</h1>
         <div className="x-notice warn" style={{ margin: "20px 0" }}>
-          <div><strong>Draft for legal review.</strong> These terms cover the BabyBlue marketing website only. Separate terms will apply to the BabyBlue App, OS, Growth and Flow before they launch, and all of them must be reviewed by a South African attorney.</div>
+          <div><strong>Draft for legal review.</strong> These terms cover the BabyBlue marketing website only. Separate terms will apply to the BabyBlue App and its related services before they launch, and all of them must be reviewed by a South African attorney.</div>
         </div>
         <h2>1. About this website</h2>
         <p>This website describes BabyBlue and lets you try a demo or contact us. Products described here may still be in development. Where something isn&apos;t available, we say so.</p>
         <h2>2. Not medical advice</h2>
         <p>BabyBlue connects people with independent practitioners and does not provide medical advice, diagnosis or treatment. Practitioners are independent and responsible for the care they provide. In an emergency call 10177 (ambulance) or 112 from a mobile phone.</p>
         <h2>3. Demonstrations</h2>
-        <p>Interface illustrations and the BabyBlue Flow demonstration use fictional names, times and figures. They do not represent real practitioners, patients, availability or results.</p>
+        <p>Interface illustrations and the queue check-in demonstration use fictional names, times and figures. They do not represent real practitioners, patients, availability or results.</p>
         <h2>4. Acceptable use</h2>
         <p>Don&apos;t misuse the website, attempt to gain unauthorised access, submit false information, or send automated or abusive requests.</p>
         <h2>5. Intellectual property</h2>

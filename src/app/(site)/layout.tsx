@@ -1,4 +1,4 @@
-import "./site.css";
+import "@/styles/site.css";
 import "@/styles/front.css";
 import { RevealController } from "@/components/front/RevealController";
 import { Footer } from "@/components/site/Footer";

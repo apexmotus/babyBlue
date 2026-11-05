@@ -83,7 +83,7 @@ export default function Flow() {
         <div className="x-narrow x-center"><Faq items={FAQ} /></div>
       </Section>
 
-      <CtaBand title="Bring Flow to your practice." lead="Flow is the first part of BabyBlue we've built. Tell us about your practice and we'll talk about early access." primary={{ href: "/practice/login", label: "Open BabyBlue OS" }} secondary={{ href: "/contact", label: "Talk to us" }} />
+      <CtaBand title="Bring Flow to your practice." lead="Flow is the first part of BabyBlue we've built. Tell us about your practice and we'll talk about early access." primary={{ href: "/practice/login", label: "Open BabyBlue OS" }} secondary={{ href: "/practitioners/contact", label: "Talk to us" }} />
     </>
   );
 }

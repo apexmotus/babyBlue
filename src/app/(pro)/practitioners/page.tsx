@@ -104,7 +104,7 @@ export default function Practitioners() {
         <div className="x-narrow x-center"><Faq items={FAQ} /></div>
       </Section>
 
-      <CtaBand title="Ready for more time and more room to grow?" lead="Open the working demo of BabyBlue OS, Flow and Growth. It uses fictional data, so you can try everything." primary={{ href: "/practice/login", label: "Open BabyBlue OS" }} secondary={{ href: "/contact", label: "Talk to us" }} />
+      <CtaBand title="Ready for more time and more room to grow?" lead="Open the working demo of BabyBlue OS, Flow and Growth. It uses fictional data, so you can try everything." primary={{ href: "/practice/login", label: "Open BabyBlue OS" }} secondary={{ href: "/practitioners/contact", label: "Talk to us" }} />
     </>
   );
 }

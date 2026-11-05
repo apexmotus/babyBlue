@@ -39,9 +39,9 @@ export default function Solutions() {
             );
           })}
         </div>
-        <p className="x-small x-center" style={{ marginTop: 28, textAlign: "center" }}>Don&apos;t see your practice type? <Link href="/contact">Talk to us.</Link> BabyBlue is built to support the full range of registered practitioners.</p>
+        <p className="x-small x-center" style={{ marginTop: 28, textAlign: "center" }}>Don&apos;t see your practice type? <Link href="/practitioners/contact">Talk to us.</Link> BabyBlue is built to support the full range of registered practitioners.</p>
       </Section>
-      <CtaBand title="Tell us how your practice works." lead="We're shaping BabyBlue with practices across South Africa. Try the demo and help us get it right." primary={{ href: "/practice/login", label: "Open BabyBlue OS" }} secondary={{ href: "/contact", label: "Contact us" }} />
+      <CtaBand title="Tell us how your practice works." lead="We're shaping BabyBlue with practices across South Africa. Try the demo and help us get it right." primary={{ href: "/practice/login", label: "Open BabyBlue OS" }} secondary={{ href: "/practitioners/contact", label: "Contact us" }} />
     </>
   );
 }

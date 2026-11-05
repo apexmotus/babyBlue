@@ -1,19 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  ArrowRight, ArrowUpRight, BadgeCheck, Bell, CalendarCheck, CalendarClock, Camera, ChartNoAxesCombined, ClipboardList, Compass, Globe, LayoutDashboard, Lock, Megaphone, MapPinned, Palette, QrCode, Rocket, Search, ShieldCheck, Smartphone, Sparkles, UsersRound, Wallet, Clock, Layers,
+  ArrowRight, ArrowUpRight, BadgeCheck, Bell, CalendarCheck, CalendarClock, Camera, Compass, Lock, MapPinned, QrCode, Rocket, Search, ShieldCheck, Wallet, Clock, Layers,
 } from "lucide-react";
 import { Finder } from "@/components/front/Finder";
 import { Reveal } from "@/components/front/Reveal";
 import { SpecialityTiles } from "@/components/front/SpecialityTiles";
 import { Btn, CtaBand, FeatureList, Head, PhotoSlot, Section } from "@/components/site/blocks";
-import { LaptopMock, MockCaption, PhoneMock } from "@/components/site/mocks";
+import { MockCaption, PhoneMock } from "@/components/site/mocks";
 import { getCities, getFinderData, getListedSpecialities } from "@/lib/directory-facets";
 import { getDirectorySummary } from "@/lib/practices/data";
 
 export const metadata: Metadata = {
-  title: { absolute: "BabyBlue — Care, connected. Better access to care. Stronger practices." },
-  description: "Find and book practitioners on your schedule. Grow and manage your practice with tools designed around the work you do. Try the working demo.",
+  title: { absolute: "BabyBlue — Care, connected. Better access to care." },
+  description: "Find and book practitioners on your schedule, with real appointment times. Try the working demo.",
   alternates: { canonical: "/" },
 };
 
@@ -25,14 +25,14 @@ export default function Home() {
   const num = (x: number) => x.toLocaleString("en-ZA");
   return (
     <>
-      {/* 1 · HERO: finder-first. Patients start here; practices are one link away. */}
+      {/* 1 · HERO: finder-first. This is the patient site; the practitioner side is not linked from here (D-34). */}
       <section className="f-hero">
         <div className="x-container">
           <div className="f-hero-grid">
             <div className="f-hero-copy">
               <span className="x-chip dev x-rise"><Rocket size={14} aria-hidden="true" /> In development · early access for South Africa</span>
-              <h1 className="f-display x-rise d1">Better access to care.<br /><span className="acc">Stronger practices.</span></h1>
-              <p className="f-lead x-rise d2">Find and book practitioners on your schedule. Grow and manage your practice with tools designed around the work you do.</p>
+              <h1 className="f-display x-rise d1">Better access to care.<br /><span className="acc">On your schedule.</span></h1>
+              <p className="f-lead x-rise d2">Find and book practitioners at times that suit you, with real availability from the practices that offer it.</p>
               <div id="find" className="x-rise d3" style={{ width: "100%" }}>
                 <Finder data={finder} />
               </div>
@@ -49,7 +49,6 @@ export default function Home() {
               </div>
               <div className="f-hero-foot x-rise d4">
                 <Link href="/patient" className="x-eyebrow">Open the patient app <ArrowRight size={14} aria-hidden="true" /></Link>
-                <Link href="/os" className="x-eyebrow">Run a practice? Explore BabyBlue OS <ArrowRight size={14} aria-hidden="true" /></Link>
               </div>
             </div>
 
@@ -81,8 +80,8 @@ export default function Home() {
           [CalendarCheck, "Book any time", "Pick a slot, any hour"],
           [Clock, "Real availability", "Straight from the diary"],
           [BadgeCheck, "Verified when confirmed", "Checked against registers"],
-          [Layers, "Practice admin", "One place to run it"],
-          [Megaphone, "Growth services", "Marketing without the maze"],
+          [MapPinned, "Care near you", "Across South Africa"],
+          [Layers, "Practice directory", "Browse before you book"],
           [Lock, "Designed for POPIA", "Privacy by design"],
         ].map(([I, t, s]) => {
           const Ic = I as typeof Lock;
@@ -125,84 +124,27 @@ export default function Home() {
         </div>
       </Section>
 
-      {/* 3 · PRACTITIONER BENEFITS */}
-      <Section tone="sky">
-        <div className="x-persona pros" style={{ background: "linear-gradient(135deg,#f1f8f4,#dff0e6)" }}>
-          <div className="x-stack" style={{ ["--gap" as string]: "18px" }}>
-            <span className="x-eyebrow">For practitioners</span>
-            <h2 className="x-h2">More time for your practice. More room to grow.</h2>
-            <p className="x-lead">Appointments, clients, queues and marketing in one connected platform, so less of your week goes on admin and more goes on the people you treat.</p>
-            <div className="x-btn-row"><Btn href="/practitioners" arrow>See how it works</Btn><Btn href="/growth" variant="outline">Marketing &amp; Growth</Btn></div>
-          </div>
-          <PhotoSlot shape="rect" style={{ minHeight: 300 }} brief="A South African practitioner between consultations, relaxed and in control of their day." />
-        </div>
-        <div className="x-grid x-g4" style={{ marginTop: 20 }}>
-          {[
-            [LayoutDashboard, "BabyBlue OS", "Calendar, appointments, clients, staff and insights in one calm workspace.", "/os"],
-            [Megaphone, "BabyBlue Growth", "Professional marketing services you can request without leaving the platform.", "/growth"],
-            [QrCode, "BabyBlue Flow", "QR check-in and a live queue for the front desk and the waiting room.", "/flow"],
-            [Smartphone, "BabyBlue App", "A booking experience that brings new customers to your diary.", "/app"],
-          ].map(([I, t, d, h]) => {
-            const Ic = I as typeof Search;
-            return (
-              <Link href={h as string} className="x-card" key={t as string}>
-                <span className="x-icon deep"><Ic size={24} aria-hidden="true" /></span>
-                <h3 className="x-h3" style={{ marginTop: 18 }}>{t as string}</h3>
-                <p>{d as string}</p>
-                <span className="x-eyebrow" style={{ marginTop: 16, fontSize: 11 }}>Learn more <ArrowRight size={14} aria-hidden="true" /></span>
-              </Link>
-            );
-          })}
-        </div>
-      </Section>
-
       {/* 4 · HOW IT WORKS */}
       <Section tone="white" id="how">
-        <Head center eyebrow="How BabyBlue works" title="One connected platform. Two sides of the same appointment." lead="Patients get a simple way to book. Practitioners get the tools to run and grow the practice behind it." />
-        <div className="x-grid x-g2" style={{ gap: 40 }}>
-          <div>
-            <h3 className="x-h3" style={{ marginBottom: 18, display: "flex", gap: 10, alignItems: "center" }}><span className="x-icon round sky" style={{ width: 40, height: 40 }}><Smartphone size={18} aria-hidden="true" /></span> For patients</h3>
-            <div className="x-journey" style={{ marginBottom: 22 }} aria-label="Patient journey">
-              {["Search", "Discover", "Compare", "Select time", "Book", "Confirm", "Attend", "Manage"].map((s, i, a) => (
-                <span key={s} style={{ display: "inline-flex", gap: 10, alignItems: "center" }}>
-                  <span className="s">{s}</span>
-                  {i < a.length - 1 && <ArrowRight size={14} aria-hidden="true" />}
-                </span>
-              ))}
-            </div>
-            <ol className="x-list" style={{ counterReset: "n" }}>
-              {[
-                ["Search and compare", "Filter by speciality, service, location, language and availability."],
-                ["Choose a real time", "Only genuinely open slots are shown, and held for you while you book."],
-                ["Confirm and attend", "Get a confirmation and reminders, then check in with a QR code."],
-                ["Manage with ease", "Reschedule, cancel and rebook from your appointment history."],
-              ].map(([t, d], i) => (
-                <li key={t}><span className="x-icon round deep" style={{ width: 36, height: 36, fontWeight: 800, fontFamily: "var(--font-head)", fontSize: 14 }}>{i + 1}</span><div><strong>{t}</strong><span>{d}</span></div></li>
-              ))}
-            </ol>
-          </div>
-          <div>
-            <h3 className="x-h3" style={{ marginBottom: 18, display: "flex", gap: 10, alignItems: "center" }}><span className="x-icon round sage" style={{ width: 40, height: 40 }}><LayoutDashboard size={18} aria-hidden="true" /></span> For practitioners</h3>
-            <div className="x-journey" style={{ marginBottom: 22 }} aria-label="Practitioner journey">
-              {["Set up", "Get verified", "Open your diary", "Get booked", "Run the day", "Grow"].map((s, i, a) => (
-                <span key={s} style={{ display: "inline-flex", gap: 10, alignItems: "center" }}>
-                  <span className="s">{s}</span>
-                  {i < a.length - 1 && <ArrowRight size={14} aria-hidden="true" />}
-                </span>
-              ))}
-            </div>
-            <ol className="x-list">
-              {[
-                ["Create your practice", "Add your services, durations, locations and team in minutes."],
-                ["Be verified", "We check registration against the relevant council's public register before a verified badge appears."],
-                ["Open your diary", "Set availability, buffers and leave. Patients book only what you offer."],
-                ["Run and grow", "Manage the day, review insights, and request marketing support when you want it."],
-              ].map(([t, d], i) => (
-                <li key={t}><span className="x-icon round deep" style={{ width: 36, height: 36, fontWeight: 800, fontFamily: "var(--font-head)", fontSize: 14 }}>{i + 1}</span><div><strong>{t}</strong><span>{d}</span></div></li>
-              ))}
-            </ol>
-          </div>
+        <Head center eyebrow="How BabyBlue works" title="From “I need someone” to a confirmed time." lead="A simple way to find a practitioner you can trust and book a time that works for you." />
+        <div className="x-journey" style={{ marginBottom: 28, justifyContent: "center" }} aria-label="Patient journey">
+          {["Search", "Discover", "Compare", "Select time", "Book", "Confirm", "Attend", "Manage"].map((s, i, a) => (
+            <span key={s} style={{ display: "inline-flex", gap: 10, alignItems: "center" }}>
+              <span className="s">{s}</span>
+              {i < a.length - 1 && <ArrowRight size={14} aria-hidden="true" />}
+            </span>
+          ))}
         </div>
+        <ol className="x-list" style={{ counterReset: "n", maxWidth: 720, marginInline: "auto" }}>
+          {[
+            ["Search and compare", "Filter by speciality, service, location, language and availability."],
+            ["Choose a real time", "Only genuinely open slots are shown, and held for you while you book."],
+            ["Confirm and attend", "Get a confirmation and reminders, then check in with a QR code."],
+            ["Manage with ease", "Reschedule, cancel and rebook from your appointment history."],
+          ].map(([t, d], i) => (
+            <li key={t}><span className="x-icon round deep" style={{ width: 36, height: 36, fontWeight: 800, fontFamily: "var(--font-head)", fontSize: 14 }}>{i + 1}</span><div><strong>{t}</strong><span>{d}</span></div></li>
+          ))}
+        </ol>
       </Section>
 
       {/* 5 · SPECIALITIES AND CITIES: tiles open the public, indexable listing pages */}
@@ -284,77 +226,25 @@ export default function Home() {
         <MockCaption />
       </Section>
 
-      {/* 7 · OS DEMO */}
-      <Section>
-        <div className="x-split rev">
-          <div><LaptopMock /><MockCaption /></div>
-          <div>
-            <Head eyebrow="BabyBlue OS" title="Your practice, running smoothly." lead="A practitioner operating system designed around the work you do: scheduling, clients, team and insights, without the clutter." />
-            <FeatureList
-              items={[
-                { icon: <CalendarCheck size={20} aria-hidden="true" />, title: "Calendar & availability", text: "Services, durations, buffers, leave and staff schedules in one view." },
-                { icon: <ClipboardList size={20} aria-hidden="true" />, title: "Appointments & clients", text: "Check-ins, status updates, rescheduling and simple client records with consent." },
-                { icon: <UsersRound size={20} aria-hidden="true" />, title: "Teams & locations", text: "Multiple practitioners, roles and permissions, kept separate between practices." },
-                { icon: <ChartNoAxesCombined size={20} aria-hidden="true" />, title: "Insights you can believe", text: "Metrics calculated from your real bookings. Never invented, never inflated." },
-              ]}
-            />
-            <div className="x-btn-row" style={{ marginTop: 28 }}><Btn href="/os" arrow>Explore BabyBlue OS</Btn></div>
-          </div>
-        </div>
-      </Section>
-
-      {/* 8 · GROWTH */}
-      <Section tone="deep">
-        <div className="x-split">
-          <div className="x-stack" style={{ ["--gap" as string]: "20px" }}>
-            <span className="x-eyebrow">BabyBlue Growth</span>
-            <h2 className="x-h2">You&apos;re an expert in your practice. You shouldn&apos;t have to be an expert in marketing, too.</h2>
-            <p className="x-lead">You take care of your patients. We&apos;ll help you take care of business: professional profiles, websites, photography, search visibility and compliant campaigns, requested straight from BabyBlue OS.</p>
-            <div className="x-btn-row"><Btn href="/growth" variant="light" arrow>Explore Growth services</Btn></div>
-          </div>
-          <div className="x-grid x-g2" style={{ gap: 14 }}>
-            {[
-              [Sparkles, "Profile optimisation"],
-              [Globe, "Practice websites"],
-              [Palette, "Brand identity"],
-              [Camera, "Photography & content"],
-              [Search, "Search visibility"],
-              [Megaphone, "Compliant campaigns"],
-              [Compass, "Marketing strategy"],
-              [ChartNoAxesCombined, "Campaign reporting"],
-            ].map(([I, t]) => {
-              const Ic = I as typeof Search;
-              return (
-                <div key={t as string} style={{ background: "rgba(255,255,255,.08)", border: "1px solid rgba(255,255,255,.16)", borderRadius: 20, padding: 18, display: "flex", gap: 12, alignItems: "center", fontWeight: 600 }}>
-                  <Ic size={20} color="#bde6ef" aria-hidden="true" /> {t as string}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </Section>
-
-      {/* 9 · FLOW */}
+      {/* 9 · CHECK-IN: the patient side of queue management */}
       <Section>
         <div className="x-split">
           <div>
-            <Head eyebrow="BabyBlue Flow" title="Calmer waiting rooms. Clearer front desks." lead="Patients check in with a QR code and can wait wherever suits them. Reception sees one live list. Everyone knows what's happening, without sharing private details." />
+            <Head eyebrow="Check in" title="Calmer waiting rooms." lead="Check in with a QR code and wait wherever suits you. You'll know what's happening, without sharing private details." />
             <FeatureList
               items={[
-                { icon: <QrCode size={20} aria-hidden="true" />, title: "QR-code check-in", text: "Arrival tracking for booked and walk-in patients." },
+                { icon: <QrCode size={20} aria-hidden="true" />, title: "QR-code check-in", text: "Let the practice know you've arrived, booked or walk-in." },
                 { icon: <Bell size={20} aria-hidden="true" />, title: "Status notifications", text: "Messages carry the practice name and queue position, never a reason for the visit." },
                 { icon: <Clock size={20} aria-hidden="true" />, title: "Honest waiting-time ranges", text: "Shown only when there's enough data to be reliable, and always as an estimate." },
               ]}
             />
-            <div className="x-btn-row" style={{ marginTop: 28 }}><Btn href="/flow" arrow>Explore BabyBlue Flow</Btn></div>
           </div>
           <div className="x-card" style={{ padding: 32, background: "linear-gradient(160deg,#fff,#eef7f9)" }}>
             <span className="x-chip sky">Try it now · demonstration data</span>
-            <h3 className="x-h3" style={{ marginTop: 14 }}>See Flow working end to end</h3>
-            <p>Open the staff queue in one tab and a patient&apos;s phone in another. Press <b>Call next</b> and watch the patient screen change. Every name and figure in the demo is fictional.</p>
+            <h3 className="x-h3" style={{ marginTop: 14 }}>See a queue from the patient&apos;s side</h3>
+            <p>Open the patient screen and join a practice's queue. Every name and figure in the demo is fictional.</p>
             <div className="x-btn-row" style={{ marginTop: 20 }}>
-              <Link className="x-btn x-btn-primary x-btn-sm" href="/staff/login">Open reception demo</Link>
-              <Link className="x-btn x-btn-outline x-btn-sm" href="/c/rosebank-family">Open patient demo</Link>
+              <Link className="x-btn x-btn-primary x-btn-sm" href="/c/rosebank-family">Open the demo</Link>
             </div>
           </div>
         </div>
@@ -366,8 +256,8 @@ export default function Home() {
         <div className="x-grid x-g3">
           {[
             [BadgeCheck, "Verification you can see", "A verified badge appears only after registration has been checked against the relevant statutory council's public register. Until then, a profile says it hasn't been verified."],
-            [ShieldCheck, "Privacy by design", "Built around POPIA. Practices are isolated from each other, access is role-based, and health information is never used to target advertising or marketing."],
-            [Wallet, "No fabricated proof", "No made-up reviews, ratings or results. Insights are calculated from real bookings, and you'll always see where a number comes from."],
+            [ShieldCheck, "Privacy by design", "Built around POPIA. Your information is kept separate from every other practice's, access is role-based, and health information is never used to target advertising or marketing."],
+            [Wallet, "No fabricated proof", "No made-up reviews, ratings or results. Everything you see comes from real practices and real bookings, and you can always see where it comes from."],
           ].map(([I, t, d]) => {
             const Ic = I as typeof Lock;
             return (
@@ -387,9 +277,9 @@ export default function Home() {
       {/* 11 · CTA */}
       <CtaBand
         title="Care, connected."
-        lead="Looking for care or providing it? Open the working demo for your side. Every practice and patient in it is fictional."
+        lead="Find a practitioner and see when they're free. The working demo uses fictional practices and patients."
         primary={{ href: "/patient", label: "Open the patient app" }}
-        secondary={{ href: "/practice/login", label: "Open BabyBlue OS" }}
+        secondary={{ href: "/directory", label: "Browse the directory" }}
       />
     </>
   );

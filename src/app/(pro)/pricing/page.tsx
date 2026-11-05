@@ -7,7 +7,7 @@ export const metadata = pageMeta("Pricing — BabyBlue", "How BabyBlue pricing w
 const PLANS = [
   { name: "Patients", tag: "BabyBlue App", price: "Planned: free", blurb: "Search, compare, book and manage appointments.", items: ["Practitioner search and filters", "Real-time availability", "Reminders and rescheduling", "Appointment history"], cta: ["/patient", "Open the patient app"] },
   { name: "Practice", tag: "BabyBlue OS · Flow", price: "Price to be announced", blurb: "Everything a practice needs to run the day.", items: ["Calendar, services and availability", "Appointments, clients and consent records", "Staff accounts and permissions", "Insights from your real data", "Flow queue and QR check-in"], cta: ["/practice/login", "Open BabyBlue OS"], hot: true },
-  { name: "Group & multi-site", tag: "Multiple practitioners and locations", price: "Custom pricing", blurb: "For larger teams and multi-location practices.", items: ["Everything in Practice", "Multiple practitioners and locations", "Role-based access at scale", "Consolidated insights", "Priority onboarding"], cta: ["/contact", "Talk to us"] },
+  { name: "Group & multi-site", tag: "Multiple practitioners and locations", price: "Custom pricing", blurb: "For larger teams and multi-location practices.", items: ["Everything in Practice", "Multiple practitioners and locations", "Role-based access at scale", "Consolidated insights", "Priority onboarding"], cta: ["/practitioners/contact", "Talk to us"] },
 ] as const;
 
 const FAQ = [
@@ -52,7 +52,7 @@ export default function Pricing() {
         <Head center eyebrow="Questions" title="Pricing FAQs" />
         <div className="x-narrow x-center"><Faq items={FAQ} /></div>
       </Section>
-      <CtaBand title="Help us get pricing right." lead="Try the demo, then tell us what would make BabyBlue worth it for your practice." primary={{ href: "/practice/login", label: "Open BabyBlue OS" }} secondary={{ href: "/contact", label: "Contact us" }} />
+      <CtaBand title="Help us get pricing right." lead="Try the demo, then tell us what would make BabyBlue worth it for your practice." primary={{ href: "/practice/login", label: "Open BabyBlue OS" }} secondary={{ href: "/practitioners/contact", label: "Contact us" }} />
     </>
   );
 }

@@ -3,20 +3,29 @@
 import { useId, useRef, useState } from "react";
 import { AlertCircle, CheckCircle2, Info, Loader2 } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { SITE } from "@/lib/site";
 
 type Status = "idle" | "sending" | "done" | "not_configured" | "error";
 
-const TOPICS = [
+// Patients are never offered the practitioner topics: the practice side is not part of the patient site (D-34).
+const PATIENT_TOPICS = [
   ["general", "General question"],
-  ["practitioner-partnership", "Practitioner partnership"],
-  ["growth-services", "Marketing & Growth services"],
   ["support", "Support"],
   ["press", "Press"],
   ["privacy-request", "Privacy request (POPIA)"],
 ] as const;
 
+const PRO_TOPICS = [
+  ["practitioner-partnership", "Joining BabyBlue as a practice"],
+  ["growth-services", "Marketing & Growth services"],
+  ["general", "General question"],
+  ["support", "Support"],
+  ["privacy-request", "Privacy request (POPIA)"],
+] as const;
+
 /** Contact form. Posts to /api/leads, which validates again on the server. */
-export function LeadForm() {
+export function LeadForm({ audience = "patient" }: { audience?: "patient" | "pro" }) {
+  const TOPICS = audience === "pro" ? PRO_TOPICS : PATIENT_TOPICS;
   const id = useId();
   const [status, setStatus] = useState<Status>("idle");
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -116,7 +125,15 @@ export function LeadForm() {
         <div className="x-notice warn" role="alert">
           <Info size={20} aria-hidden="true" />
           <div>
-            <strong>The contact form isn&apos;t switched on for this demo yet.</strong> Nothing you typed was saved. The site owner needs to connect the database (see <code>.env.example</code>) before it can store messages.
+            {SITE.contactEmail ? (
+              <>
+                <strong>We couldn&apos;t save your message just now.</strong> Nothing you typed was saved. Please email us at <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a> instead.
+              </>
+            ) : (
+              <>
+                <strong>The contact form isn&apos;t switched on for this demo yet.</strong> Nothing you typed was saved. The site owner needs to connect the database (see <code>.env.example</code>) before it can store messages.
+              </>
+            )}
           </div>
         </div>
       )}
