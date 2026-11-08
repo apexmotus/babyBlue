@@ -7,24 +7,31 @@ next-env.d.ts
 
 .vercel
 .data
-src/local/sql.generated.ts
-public/demo-db.tar.gz
+packages/pglite-demo/src/sql.generated.ts
+client-web/public/demo-db.tar.gz
+admin-dashboard/public/demo-db.tar.gz
+
+# Turborepo
+.turbo
 
 # macOS
 .DS_Store
 
-# .NET
-api/**/bin/
-api/**/obj/
-api/**/TestResults/
+# .NET (api_dotnet/ — reference blueprint, kept temporarily during the NestJS api/ build)
+api_dotnet/**/bin/
+api_dotnet/**/obj/
+api_dotnet/**/TestResults/
 .vs/
 *.user
 
 # .NET / NuGet caches created when dotnet runs with a redirected HOME.
 # These are 186 MB of package binaries; they must never enter history.
-api/.nuget/
-api/.local/
-api/**/.nuget/
-api/**/.local/
+api_dotnet/.nuget/
+api_dotnet/.local/
+api_dotnet/**/.nuget/
+api_dotnet/**/.local/
 .nuget/
 Library/
+
+# NestJS api/ build output, once it exists
+api/dist/

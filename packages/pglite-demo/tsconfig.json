@@ -1,0 +1,11 @@
+{
+  "extends": "../config/tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "@babyblue/pglite-demo/*": ["./src/*"],
+      "@babyblue/utils/*": ["../utils/src/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts"],
+  "exclude": ["node_modules"]
+}

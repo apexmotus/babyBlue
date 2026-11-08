@@ -1,0 +1,6 @@
+packages:
+  - "client-web"
+  - "admin-dashboard"
+  - "api"
+  - "db"
+  - "packages/*"

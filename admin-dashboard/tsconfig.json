@@ -1,0 +1,22 @@
+{
+  "extends": "../packages/config/tsconfig.nextjs.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"],
+      "@babyblue/ui/*": ["../packages/ui/src/*"],
+      "@babyblue/api-client/*": ["../packages/api-client/src/*"],
+      "@babyblue/pglite-demo/*": ["../packages/pglite-demo/src/*"],
+      "@babyblue/flow-demo/*": ["../packages/flow-demo/src/*"],
+      "@babyblue/utils/*": ["../packages/utils/src/*"]
+    },
+    "allowImportingTsExtensions": true
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": ["node_modules"]
+}
