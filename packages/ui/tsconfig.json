@@ -1,0 +1,14 @@
+{
+  "extends": "../config/tsconfig.nextjs.json",
+  "compilerOptions": {
+    "paths": {
+      "@babyblue/ui/*": ["./src/*"],
+      "@babyblue/utils/*": ["../utils/src/*"],
+      "@babyblue/pglite-demo/*": ["../pglite-demo/src/*"],
+      "@babyblue/flow-demo/*": ["../flow-demo/src/*"],
+      "@babyblue/api-client/*": ["../api-client/src/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "test/**/*.ts"],
+  "exclude": ["node_modules"]
+}

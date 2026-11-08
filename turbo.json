@@ -1,0 +1,38 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "tui",
+  "tasks": {
+    "db:gen-sql": {
+      "cache": false,
+      "outputs": ["../packages/pglite-demo/src/sql.generated.ts"]
+    },
+    "db:snapshot": {
+      "dependsOn": ["db:gen-sql"],
+      "cache": false,
+      "outputs": ["../client-web/public/demo-db.tar.gz", "../admin-dashboard/public/demo-db.tar.gz"]
+    },
+    "build": {
+      "dependsOn": ["^build", "db:snapshot"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true,
+      "dependsOn": ["db:snapshot"]
+    },
+    "lint": {
+      "dependsOn": ["^build"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "outputs": ["*.tsbuildinfo"]
+    },
+    "test": {
+      "dependsOn": ["^build"]
+    },
+    "test:db": {
+      "cache": false,
+      "dependsOn": ["db:gen-sql"]
+    }
+  }
+}

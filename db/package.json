@@ -1,0 +1,17 @@
+{
+  "name": "@babyblue/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "db:gen-sql": "node scripts/gen-sql.mjs",
+    "db:snapshot": "node scripts/build-snapshot.ts",
+    "test:db": "vitest run tests/db"
+  },
+  "devDependencies": {
+    "@babyblue/pglite-demo": "workspace:*",
+    "@electric-sql/pglite": "^0.5.11",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}
